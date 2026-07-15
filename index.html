@@ -264,46 +264,141 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .pill[data-s="DUPLICATE_BOOKS"],.pill[data-s="DUPLICATE_PORTAL"]{background:var(--pbg);color:#c084fc}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .toolbar input[type=search]{flex:1;min-width:200px}
-.table-wrap{overflow:auto;max-height:min(70vh,720px);border:1px solid var(--border);border-radius:12px;background:var(--card)}
-table.data{width:100%;border-collapse:collapse;font-size:.78rem;min-width:1200px;color:#f1f5f9!important;background:var(--bg)}
-table.data th{position:sticky;top:0;background:#0b1224!important;color:#e2e8f0!important;text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);z-index:2;white-space:nowrap;font-weight:700}
-table.data td{padding:var(--row-pad) 8px;border-bottom:1px solid var(--border);vertical-align:top;color:#f8fafc!important;background:transparent}
-table.data td,table.data th,table.data span,table.data a,table.data div{color:inherit}
-table.data tr:hover{background:rgba(56,189,248,.08)}
-table.data tr:hover td{color:#ffffff!important}
+
+/* ===== READABLE LIGHT DATA TABLES ===== */
+.table-wrap{
+  overflow:auto;
+  max-height:min(70vh,720px);
+  border:1px solid #cbd5e1;
+  border-radius:12px;
+  background:#ffffff !important;
+}
+table.data{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.8rem;
+  min-width:1200px;
+  color:#0f172a !important;
+  background:#ffffff !important;
+}
+table.data th{
+  position:sticky;
+  top:0;
+  background:#1e3a5f !important;
+  color:#ffffff !important;
+  text-align:left;
+  padding:11px 9px;
+  border-bottom:1px solid #cbd5e1;
+  z-index:2;
+  white-space:nowrap;
+  font-weight:700;
+}
+table.data td{
+  padding:9px 8px;
+  border-bottom:1px solid #e2e8f0;
+  vertical-align:top;
+  color:#0f172a !important;
+  background:#ffffff !important;
+}
+table.data tr:nth-child(even) td{
+  background:#f8fafc !important;
+}
+table.data tr:hover td{
+  background:#e0f2fe !important;
+  color:#0f172a !important;
+}
 body.hide-actions-col table.data th:last-child,
 body.hide-actions-col table.data td:last-child{display:none}
 body.compact-table .table-wrap{max-height:min(55vh,520px)}
 body.compact-table table.data{font-size:.72rem}
-.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#f8fafc!important}
-.diff-ok{color:#94a3b8!important}
-.diff-bad{color:#fca5a5!important}
-/* Force readable text inside line-level / supplier tables (Blogger override fix) */
-#tbody td,#supBody td,#matrixBody td,#qualityBody td{color:#f8fafc!important}
-#tbody td:last-child,#supBody td:last-child{color:#cbd5e1!important}
-.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:.68rem;font-weight:800;white-space:nowrap;color:#fff!important}
-.tag.MATCHED,.tag.MATCHED_2B,.tag.MATCHED_ALL{background:#166534!important;color:#bbf7d0!important}
-.tag.DATE_MISMATCH,.tag.PROBABLE_MATCH{background:#1e3a8a!important;color:#bfdbfe!important}
-.tag.VALUE_MISMATCH,.tag.TAX_MISMATCH,.tag.IN_2A_NOT_2B{background:#92400e!important;color:#fde68a!important}
-.tag.ONLY_IN_BOOKS{background:#991b1b!important;color:#fecaca!important}
-.tag.ONLY_IN_2B,.tag.ONLY_IN_2A{background:#7f1d1d!important;color:#fecaca!important}
-.tag.DUPLICATE_BOOKS,.tag.DUPLICATE_PORTAL{background:#5b21b6!important;color:#e9d5ff!important}
-/* Source dots readable */
-.src-dot{color:#0f172a!important}
-.src-dot.off{background:#1e293b!important;color:#94a3b8!important}
-.src-dot.b.on{background:#60a5fa!important;color:#0f172a!important}
-.src-dot.a.on{background:#fbbf24!important;color:#0f172a!important}
-.src-dot.t.on{background:#4ade80!important;color:#0f172a!important}
-/* Pearl theme keep dark text on light bg */
-[data-theme="pearl"] table.data,
-[data-theme="pearl"] table.data td,
-[data-theme="pearl"] #tbody td,
-[data-theme="pearl"] #supBody td,
-[data-theme="pearl"] #matrixBody td,
-[data-theme="pearl"] #qualityBody td,
-[data-theme="pearl"] .money{color:#0f172a!important}
-[data-theme="pearl"] table.data th{background:#e2e8f0!important;color:#0f172a!important}
-[data-theme="pearl"] #tbody td:last-child{color:#334155!important}
+.money{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  color:#0f172a !important;
+  font-weight:600;
+}
+.diff-ok{color:#64748b !important}
+.diff-bad{color:#b91c1c !important;font-weight:700}
+#tbody td,#supBody td,#matrixBody td,#qualityBody td{
+  color:#0f172a !important;
+}
+#tbody td:last-child,#supBody td:last-child{
+  color:#334155 !important;
+  font-size:.75rem;
+}
+/* Status tags - bright on light table */
+.tag{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:6px;
+  font-size:.68rem;
+  font-weight:800;
+  white-space:nowrap;
+  color:#fff !important;
+}
+.tag.MATCHED,.tag.MATCHED_2B,.tag.MATCHED_ALL{background:#15803d !important;color:#fff !important}
+.tag.DATE_MISMATCH,.tag.PROBABLE_MATCH{background:#1d4ed8 !important;color:#fff !important}
+.tag.VALUE_MISMATCH,.tag.TAX_MISMATCH,.tag.IN_2A_NOT_2B{background:#c2410c !important;color:#fff !important}
+.tag.ONLY_IN_BOOKS{background:#dc2626 !important;color:#fff !important}
+.tag.ONLY_IN_2B,.tag.ONLY_IN_2A{background:#b91c1c !important;color:#fff !important}
+.tag.DUPLICATE_BOOKS,.tag.DUPLICATE_PORTAL{background:#7c3aed !important;color:#fff !important}
+/* Source dots */
+.src-dots{display:flex;gap:4px}
+.src-dot{
+  width:18px;height:18px;border-radius:5px;
+  display:grid;place-items:center;
+  font-size:.58rem;font-weight:800;
+  color:#0f172a !important;
+}
+.src-dot.off{background:#e2e8f0 !important;color:#64748b !important}
+.src-dot.b.on{background:#3b82f6 !important;color:#fff !important}
+.src-dot.a.on{background:#f59e0b !important;color:#fff !important}
+.src-dot.t.on{background:#22c55e !important;color:#fff !important}
+/* Matrix tables also light */
+.matrix{
+  overflow:auto;
+  border:1px solid #cbd5e1;
+  border-radius:12px;
+  background:#fff !important;
+}
+.matrix table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.8rem;
+  min-width:520px;
+  color:#0f172a !important;
+  background:#fff !important;
+}
+.matrix th,.matrix td{
+  padding:9px 10px;
+  border-bottom:1px solid #e2e8f0;
+  text-align:center;
+  color:#0f172a !important;
+  background:#fff !important;
+}
+.matrix th{
+  background:#1e3a5f !important;
+  color:#fff !important;
+  font-weight:700;
+}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.matrix tr:nth-child(even) td{background:#f8fafc !important}
+.matrix tr:hover td{background:#e0f2fe !important}
+.matrix .yes{color:#15803d;font-weight:700}
+.matrix .no{color:#94a3b8}
+/* Results section cards stay readable */
+#results .card{background:#fff !important;color:#0f172a !important;border-color:#cbd5e1}
+#results .card h4{color:#0f172a !important}
+#results .pill{background:#e2e8f0;color:#0f172a}
+#results .pill.on{outline:2px solid #0284c7;color:#0f172a}
+#results .toolbar input[type=search],
+#results .toolbar select{
+  background:#fff !important;
+  color:#0f172a !important;
+  border:1px solid #cbd5e1 !important;
+}
+
 .src-dots{display:flex;gap:4px}
 .src-dot{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:.58rem;font-weight:800}
 .src-dot.on{color:#041018}.src-dot.off{background:#1a2438;color:var(--faint)}
@@ -322,42 +417,12 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 .progress.show{display:block}
 .progress>i{display:block;height:100%;width:0;background:var(--grad);transition:width .25s}
 
-/* ===== ULTRA FORCE: line-level white text ===== */
-.card .table-wrap,
-.card .table-wrap table,
-.card .table-wrap table.data,
-#results table.data,
-#results .table-wrap {
-  background:#0b1220 !important;
-  color:#ffffff !important;
-}
-#results table.data th {
-  background:#111827 !important;
-  color:#ffffff !important;
-}
-#results table.data td,
-#results #tbody td,
-#results #supBody td,
-#results table.data td * {
-  color:#ffffff !important;
-}
-#results table.data td .tag {
-  color:#ffffff !important;
-}
-#results table.data td .money,
-#results .money {
-  color:#ffffff !important;
-}
-#results table.data td.diff-bad,
-#results .diff-bad {
-  color:#fecaca !important;
-}
-#results table.data td:last-child {
-  color:#e5e7eb !important;
-}
-#results .table-wrap table.data tr:nth-child(even) td {
-  background:rgba(255,255,255,.03) !important;
-}
+
+#results .card .table-wrap table.data td { color:#0f172a !important; background:#fff !important; }
+#results .card .table-wrap table.data tr:nth-child(even) td { background:#f1f5f9 !important; }
+#results .card .table-wrap table.data th { background:#1e3a5f !important; color:#fff !important; }
+#results .matrix table td { color:#0f172a !important; background:#fff !important; }
+#results .matrix table th { background:#1e3a5f !important; color:#fff !important; }
 
 </style>
 </head>
@@ -683,7 +748,7 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
   </div>
 
   <!-- Results -->
-  <div id="results" class="hidden results-force-white">
+  <div id="results" class="hidden">
     <div class="section-title">
       <h3>③ ITC Control Dashboard</h3>
       <span id="genAt"></span>
@@ -1020,16 +1085,31 @@ function render(){
   $("#kClaim").textContent=fmt(a.claimable_itc);$("#kHold").textContent=fmt(a.hold_itc);$("#k2aOnly").textContent=fmt(a.pending_2b_itc);$("#kInv").textContent=fmt(a.investigate_itc);$("#kCount").textContent=String(lastSummary.total);
   $("#kSplit").textContent=`Matched ${(c.MATCHED||0)+(c.MATCHED_2B||0)+(c.MATCHED_ALL||0)} · Pending ${c.ONLY_IN_BOOKS||0} · 2A≠2B ${c.IN_2A_NOT_2B||0}`;$("#genAt").textContent="Generated: "+lastSummary.generated_at;
   const matrixGroups=[{key:"MATCHED_ALL",label:"Books + 2A + 2B",act:"Can claim now"},{key:"MATCHED_2B",label:"Books + 2B",act:"Can claim now"},{key:"MATCHED",label:"Matched (mode)",act:"Can claim / review"},{key:"DATE_MISMATCH",label:"Date mismatch",act:"Check invoice date"},{key:"IN_2A_NOT_2B",label:"Books + 2A, not 2B",act:"Cannot claim yet"},{key:"VALUE_MISMATCH",label:"Value mismatch",act:"Check & fix"},{key:"TAX_MISMATCH",label:"Tax mismatch",act:"Check & fix"},{key:"PROBABLE_MATCH",label:"Probable match",act:"Check manually"},{key:"ONLY_IN_BOOKS",label:"Only in Books",act:"Cannot claim yet — ask supplier"},{key:"ONLY_IN_2B",label:"Only in 2B",act:"Add in books / check"},{key:"ONLY_IN_2A",label:"Only in 2A",act:"Track / add in books"}];
-  const mb=$("#matrixBody");mb.innerHTML="";for(const g of matrixGroups){const rows=lastResults.filter(r=>r.status===g.key);if(!rows.length)continue;let taxable=0,tax=0;for(const r of rows){const inv=r.books||r.portal2b||r.portal2a;if(inv){taxable+=inv.taxable_value;tax+=inv.total_tax;}}const tr=document.createElement("tr");tr.innerHTML=`<td style="color:#fff!important">${esc(g.label)}</td><td style="color:#fff!important">${rows.length}</td><td class="money" style="color:#fff!important">${fmt(taxable)}</td><td class="money" style="color:#fff!important">${fmt(tax)}</td><td style="color:#fff!important">${esc(g.act)}</td>`;mb.appendChild(tr);}
+  const mb=$("#matrixBody");mb.innerHTML="";for(const g of matrixGroups){const rows=lastResults.filter(r=>r.status===g.key);if(!rows.length)continue;let taxable=0,tax=0;for(const r of rows){const inv=r.books||r.portal2b||r.portal2a;if(inv){taxable+=inv.taxable_value;tax+=inv.total_tax;}}const tr=document.createElement("tr");tr.innerHTML=`<td style="color:#0f172a!important">${esc(g.label)}</td><td style="color:#0f172a!important">${rows.length}</td><td class="money" style="color:#0f172a!important">${fmt(taxable)}</td><td class="money" style="color:#0f172a!important">${fmt(tax)}</td><td style="color:#0f172a!important">${esc(g.act)}</td>`;mb.appendChild(tr);}
   const matched=(c.MATCHED||0)+(c.MATCHED_2B||0)+(c.MATCHED_ALL||0)+(c.DATE_MISMATCH||0),total=lastSummary.total||1;
-  $("#qualityBody").innerHTML=[["Exact / clean match",matched,"Can claim (subject to Sec 16)"],["Needs attention",(c.VALUE_MISMATCH||0)+(c.TAX_MISMATCH||0)+(c.PROBABLE_MATCH||0)+(c.IN_2A_NOT_2B||0),"Fix before claim"],["Only in books",c.ONLY_IN_BOOKS||0,"Cannot claim yet — ask supplier"],["Only on portal",(c.ONLY_IN_2B||0)+(c.ONLY_IN_2A||0),"Missing in books"]].map(([n,cnt,note])=>`<tr><td>${n}</td><td>${cnt}</td><td>${((cnt/total)*100).toFixed(1)}%</td><td style="color:#cbd5e1!important">${note}</td></tr>`).join("");
+  $("#qualityBody").innerHTML=[["Exact / clean match",matched,"Can claim (subject to Sec 16)"],["Needs attention",(c.VALUE_MISMATCH||0)+(c.TAX_MISMATCH||0)+(c.PROBABLE_MATCH||0)+(c.IN_2A_NOT_2B||0),"Fix before claim"],["Only in books",c.ONLY_IN_BOOKS||0,"Cannot claim yet — ask supplier"],["Only on portal",(c.ONLY_IN_2B||0)+(c.ONLY_IN_2A||0),"Missing in books"]].map(([n,cnt,note])=>`<tr><td>${n}</td><td>${cnt}</td><td>${((cnt/total)*100).toFixed(1)}%</td><td style="color:#0f172a!important;font-weight:500">${note}</td></tr>`).join("");
   const pills=$("#pills");pills.innerHTML="";for(const s of["ALL",...Object.keys(c).sort()]){const el=document.createElement("span");el.className="pill"+(filterStatus===s?" on":"");el.textContent=`${s} (${s==="ALL"?lastResults.length:(c[s]||0)})`;el.onclick=()=>{filterStatus=s;render();};pills.appendChild(el);}
   const q=($("#search").value||"").toLowerCase().trim(),vt=$("#filterSoft").value,tb=$("#tbody");tb.innerHTML="";
-  for(const r of lastResults){if(filterStatus!=="ALL"&&r.status!==filterStatus)continue;const row=toRow(r);if(vt&&row.voucher_type!==vt)continue;if(q&&!Object.values(row).join(" ").toLowerCase().includes(q))continue;const tr=document.createElement("tr");const diff=row.taxable_diff,dcls=(diff===""||diff===0)?"diff-ok":"diff-bad";tr.innerHTML=`<td style="color:#fff!important"><span class="tag ${row.status}">${row.status}</span></td><td style="color:#fff!important"><div class="src-dots"><span class="src-dot b ${row.has_books?"on":"off"}">B</span><span class="src-dot a ${row.has_2a?"on":"off"}">A</span><span class="src-dot t ${row.has_2b?"on":"off"}">2B</span></div></td><td style="color:#fff!important">${esc(row.gstin)}</td><td style="color:#fff!important">${esc(row.party_name)}</td><td style="color:#fff!important">${esc(row.invoice_no_books)}</td><td style="color:#fff!important">${esc(row.invoice_no_2b)}</td><td style="color:#fff!important">${esc(row.invoice_no_2a)}</td><td style="color:#fff!important">${esc(row.invoice_date)}</td><td class="money" style="color:#fff!important">${row.taxable_books===""?"—":fmt(row.taxable_books)}</td><td class="money" style="color:#fff!important">${row.taxable_2b===""?"—":fmt(row.taxable_2b)}</td><td class="money" style="color:#fff!important">${row.taxable_2a===""?"—":fmt(row.taxable_2a)}</td><td class="money ${dcls}" style="color:${dcls==="diff-bad"?"#fecaca":"#fff"}!important">${diff===""?"—":fmt(diff)}</td><td class="money" style="color:#fff!important">${row.total_tax_books===""?"—":fmt(row.total_tax_books)}</td><td class="money" style="color:#fff!important">${row.total_tax_2b===""?"—":fmt(row.total_tax_2b)}</td><td style="max-width:210px;color:#e5e7eb!important;font-size:.72rem">${esc(row.action)}</td>`;tb.appendChild(tr);}
-  // Force white text on dark line-level table (beats Blogger/theme overrides)
-  try{ document.querySelectorAll('#tbody td, #supBody td, .table-wrap table.data td').forEach(td=>{ if(!td.style.color || td.style.color.includes('muted') || getComputedStyle(td).color==='rgb(0, 0, 0)'){ td.style.setProperty('color','#f8fafc','important'); }}); document.querySelectorAll('#tbody td .money, #supBody td.money, .table-wrap .money').forEach(el=>el.style.setProperty('color','#f8fafc','important')); document.querySelectorAll('#tbody td:last-child').forEach(el=>el.style.setProperty('color','#e2e8f0','important')); }catch(e){}
-  /*forceWhiteTable*/
-  const sb=$("#supBody");sb.innerHTML="";for(const[g,s]of Object.entries(lastSummary.supplier_summary).sort((a,b)=>(b[1].hold_itc+b[1].claimable_itc)-(a[1].hold_itc+a[1].claimable_itc))){let risk="Low",col="var(--green)";if(s.hold_itc>0&&s.hold>=2){risk="High";col="var(--red)";}else if(s.hold_itc>0||s.a_not_b>0){risk="Medium";col="var(--amber)";}const tr=document.createElement("tr");tr.innerHTML=`<td style="color:#fff!important">${esc(g)}</td><td style="color:#fff!important">${esc(s.party_name)}</td><td style="color:#fff!important">${s.matched}</td><td style="color:#fff!important">${s.hold}</td><td style="color:#fff!important">${s.a_not_b}</td><td style="color:#fff!important">${s.portal_only}</td><td class="money" style="color:#fff!important">${fmt(s.claimable_itc)}</td><td class="money" style="color:${s.hold_itc>0?"#fecaca":"#fff"}!important">${fmt(s.hold_itc)}</td><td style="color:${col};font-weight:700">${risk}</td>`;sb.appendChild(tr);}
+  for(const r of lastResults){if(filterStatus!=="ALL"&&r.status!==filterStatus)continue;const row=toRow(r);if(vt&&row.voucher_type!==vt)continue;if(q&&!Object.values(row).join(" ").toLowerCase().includes(q))continue;const tr=document.createElement("tr");const diff=row.taxable_diff,dcls=(diff===""||diff===0)?"diff-ok":"diff-bad";tr.innerHTML=`<td style="color:#0f172a!important"><span class="tag ${row.status}">${row.status}</span></td><td style="color:#0f172a!important"><div class="src-dots"><span class="src-dot b ${row.has_books?"on":"off"}">B</span><span class="src-dot a ${row.has_2a?"on":"off"}">A</span><span class="src-dot t ${row.has_2b?"on":"off"}">2B</span></div></td><td style="color:#0f172a!important">${esc(row.gstin)}</td><td style="color:#0f172a!important">${esc(row.party_name)}</td><td style="color:#0f172a!important">${esc(row.invoice_no_books)}</td><td style="color:#0f172a!important">${esc(row.invoice_no_2b)}</td><td style="color:#0f172a!important">${esc(row.invoice_no_2a)}</td><td style="color:#0f172a!important">${esc(row.invoice_date)}</td><td class="money" style="color:#0f172a!important">${row.taxable_books===""?"—":fmt(row.taxable_books)}</td><td class="money" style="color:#0f172a!important">${row.taxable_2b===""?"—":fmt(row.taxable_2b)}</td><td class="money" style="color:#0f172a!important">${row.taxable_2a===""?"—":fmt(row.taxable_2a)}</td><td class="money ${dcls}" style="color:${dcls==="diff-bad"?"#b91c1c":"#0f172a"}!important">${diff===""?"—":fmt(diff)}</td><td class="money" style="color:#0f172a!important">${row.total_tax_books===""?"—":fmt(row.total_tax_books)}</td><td class="money" style="color:#0f172a!important">${row.total_tax_2b===""?"—":fmt(row.total_tax_2b)}</td><td style="max-width:210px;color:#e5e7eb!important;font-size:.72rem">${esc(row.action)}</td>`;tb.appendChild(tr);}
+  // Force dark readable text on light tables
+  try{
+    document.querySelectorAll('#tbody td, #supBody td, #matrixBody td, #qualityBody td, .table-wrap table.data td, .matrix td').forEach(td=>{
+      td.style.setProperty('background','#ffffff','important');
+      td.style.setProperty('color','#0f172a','important');
+    });
+    document.querySelectorAll('#tbody tr:nth-child(even) td, #supBody tr:nth-child(even) td, #matrixBody tr:nth-child(even) td').forEach(td=>{
+      td.style.setProperty('background','#f8fafc','important');
+    });
+    document.querySelectorAll('.table-wrap table.data th, .matrix th').forEach(th=>{
+      th.style.setProperty('background','#1e3a5f','important');
+      th.style.setProperty('color','#ffffff','important');
+    });
+    document.querySelectorAll('.money').forEach(el=>el.style.setProperty('color','#0f172a','important'));
+    document.querySelectorAll('#tbody td:last-child').forEach(el=>el.style.setProperty('color','#334155','important'));
+    document.querySelectorAll('.diff-bad').forEach(el=>el.style.setProperty('color','#b91c1c','important'));
+  }catch(e){}
+  /*forceLightTable*/
+  const sb=$("#supBody");sb.innerHTML="";for(const[g,s]of Object.entries(lastSummary.supplier_summary).sort((a,b)=>(b[1].hold_itc+b[1].claimable_itc)-(a[1].hold_itc+a[1].claimable_itc))){let risk="Low",col="var(--green)";if(s.hold_itc>0&&s.hold>=2){risk="High";col="var(--red)";}else if(s.hold_itc>0||s.a_not_b>0){risk="Medium";col="var(--amber)";}const tr=document.createElement("tr");tr.innerHTML=`<td style="color:#0f172a!important">${esc(g)}</td><td style="color:#0f172a!important">${esc(s.party_name)}</td><td style="color:#0f172a!important">${s.matched}</td><td style="color:#0f172a!important">${s.hold}</td><td style="color:#0f172a!important">${s.a_not_b}</td><td style="color:#0f172a!important">${s.portal_only}</td><td class="money" style="color:#0f172a!important">${fmt(s.claimable_itc)}</td><td class="money" style="color:${s.hold_itc>0?"#b91c1c":"#0f172a"}!important">${fmt(s.hold_itc)}</td><td style="color:${col};font-weight:700">${risk}</td>`;sb.appendChild(tr);}
 }
 function downloadBlob(filename,blob){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 function downloadText(filename,text,mime="text/plain"){downloadBlob(filename,new Blob([text],{type:mime}));}
@@ -1073,5 +1153,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1b726e0aceffc3c',t:'MTc4NDEwMTU3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1b7344b2b5fc5da',t:'MTc4NDEwMjEyMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
