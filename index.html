@@ -1,15 +1,16 @@
-<!-- rebuild pages -->
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>GST Nexus — GSTR-2A / 2B ↔ Books Reconciliation</title>
+<!-- Local paths (GitHub root OR lib/) + CDN fallback for Blogger/GitHub Pages -->
+<script src="xlsx.full.min.js"></script>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-/* If local lib missing (Blogger paste), CDN above loads Excel support */
+/* Excel library: root xlsx.full.min.js → lib/ → CDN */
 </script>
 <style>
 :root, [data-theme="nexus"]{
@@ -263,23 +264,46 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .pill[data-s="DUPLICATE_BOOKS"],.pill[data-s="DUPLICATE_PORTAL"]{background:var(--pbg);color:#c084fc}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .toolbar input[type=search]{flex:1;min-width:200px}
-.table-wrap{overflow:auto;max-height:min(70vh,720px);border:1px solid var(--border);border-radius:12px}
-table.data{width:100%;border-collapse:collapse;font-size:.78rem;min-width:1200px}
-table.data th{position:sticky;top:0;background:var(--table-head);color:var(--muted);text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);z-index:2;white-space:nowrap}
-table.data td{padding:var(--row-pad) 8px;border-bottom:1px solid var(--border);vertical-align:top}
-table.data tr:hover{background:var(--cbg)}
+.table-wrap{overflow:auto;max-height:min(70vh,720px);border:1px solid var(--border);border-radius:12px;background:var(--card)}
+table.data{width:100%;border-collapse:collapse;font-size:.78rem;min-width:1200px;color:#f1f5f9!important;background:var(--bg)}
+table.data th{position:sticky;top:0;background:#0b1224!important;color:#e2e8f0!important;text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);z-index:2;white-space:nowrap;font-weight:700}
+table.data td{padding:var(--row-pad) 8px;border-bottom:1px solid var(--border);vertical-align:top;color:#f8fafc!important;background:transparent}
+table.data td,table.data th,table.data span,table.data a,table.data div{color:inherit}
+table.data tr:hover{background:rgba(56,189,248,.08)}
+table.data tr:hover td{color:#ffffff!important}
 body.hide-actions-col table.data th:last-child,
 body.hide-actions-col table.data td:last-child{display:none}
 body.compact-table .table-wrap{max-height:min(55vh,520px)}
 body.compact-table table.data{font-size:.72rem}
-.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:800;white-space:nowrap}
-.tag.MATCHED,.tag.MATCHED_2B,.tag.MATCHED_ALL{background:var(--gbg);color:#4ade80}
-.tag.DATE_MISMATCH,.tag.PROBABLE_MATCH{background:var(--bbg);color:#60a5fa}
-.tag.VALUE_MISMATCH,.tag.TAX_MISMATCH,.tag.IN_2A_NOT_2B{background:var(--abg);color:#fbbf24}
-.tag.ONLY_IN_BOOKS{background:var(--rbg);color:#f87171}
-.tag.ONLY_IN_2B,.tag.ONLY_IN_2A{background:rgba(239,68,68,.2);color:#fca5a5}
-.tag.DUPLICATE_BOOKS,.tag.DUPLICATE_PORTAL{background:var(--pbg);color:#c084fc}
+.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#f8fafc!important}
+.diff-ok{color:#94a3b8!important}
+.diff-bad{color:#fca5a5!important}
+/* Force readable text inside line-level / supplier tables (Blogger override fix) */
+#tbody td,#supBody td,#matrixBody td,#qualityBody td{color:#f8fafc!important}
+#tbody td:last-child,#supBody td:last-child{color:#cbd5e1!important}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:.68rem;font-weight:800;white-space:nowrap;color:#fff!important}
+.tag.MATCHED,.tag.MATCHED_2B,.tag.MATCHED_ALL{background:#166534!important;color:#bbf7d0!important}
+.tag.DATE_MISMATCH,.tag.PROBABLE_MATCH{background:#1e3a8a!important;color:#bfdbfe!important}
+.tag.VALUE_MISMATCH,.tag.TAX_MISMATCH,.tag.IN_2A_NOT_2B{background:#92400e!important;color:#fde68a!important}
+.tag.ONLY_IN_BOOKS{background:#991b1b!important;color:#fecaca!important}
+.tag.ONLY_IN_2B,.tag.ONLY_IN_2A{background:#7f1d1d!important;color:#fecaca!important}
+.tag.DUPLICATE_BOOKS,.tag.DUPLICATE_PORTAL{background:#5b21b6!important;color:#e9d5ff!important}
+/* Source dots readable */
+.src-dot{color:#0f172a!important}
+.src-dot.off{background:#1e293b!important;color:#94a3b8!important}
+.src-dot.b.on{background:#60a5fa!important;color:#0f172a!important}
+.src-dot.a.on{background:#fbbf24!important;color:#0f172a!important}
+.src-dot.t.on{background:#4ade80!important;color:#0f172a!important}
+/* Pearl theme keep dark text on light bg */
+[data-theme="pearl"] table.data,
+[data-theme="pearl"] table.data td,
+[data-theme="pearl"] #tbody td,
+[data-theme="pearl"] #supBody td,
+[data-theme="pearl"] #matrixBody td,
+[data-theme="pearl"] #qualityBody td,
+[data-theme="pearl"] .money{color:#0f172a!important}
+[data-theme="pearl"] table.data th{background:#e2e8f0!important;color:#0f172a!important}
+[data-theme="pearl"] #tbody td:last-child{color:#334155!important}
 .src-dots{display:flex;gap:4px}
 .src-dot{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:.58rem;font-weight:800}
 .src-dot.on{color:#041018}.src-dot.off{background:#1a2438;color:var(--faint)}
@@ -1008,6 +1032,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1b6da593f30f321',t:'MTc4NDA5ODQzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1b72055ba0023e4',t:'MTc4NDEwMTMwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
