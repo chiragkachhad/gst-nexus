@@ -283,6 +283,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .pill[data-s="IN_2A_NOT_2B"]{background:var(--abg);color:#fbbf24}
 .pill[data-s="VALUE_MISMATCH"],.pill[data-s="TAX_MISMATCH"]{background:var(--abg);color:#fbbf24}
 .pill[data-s="ONLY_IN_BOOKS"]{background:var(--rbg);color:#f87171}
+.pill[data-s="BOOKS_NOTE_NOT_IN_B2B"]{background:var(--pbg);color:#c084fc}
 .pill[data-s="ONLY_IN_2B"],.pill[data-s="ONLY_IN_2A"]{background:rgba(239,68,68,.18);color:#fca5a5}
 .pill[data-s="PROBABLE_MATCH"],.pill[data-s="DATE_MISMATCH"],.pill[data-s="INVOICE_MISMATCH"]{background:var(--bbg);color:#60a5fa}
 .pill[data-s="GSTIN_MISMATCH"]{background:var(--abg);color:#f59e0b}
@@ -367,6 +368,7 @@ body.compact-table table.data{font-size:.72rem}
 .tag.GSTIN_MISMATCH{background:#b45309 !important;color:#fff !important}
 .tag.VALUE_MISMATCH,.tag.TAX_MISMATCH,.tag.IN_2A_NOT_2B{background:#c2410c !important;color:#fff !important}
 .tag.ONLY_IN_BOOKS{background:#dc2626 !important;color:#fff !important}
+.tag.BOOKS_NOTE_NOT_IN_B2B{background:#7c3aed !important;color:#fff !important}
 .tag.ONLY_IN_2B,.tag.ONLY_IN_2A{background:#b91c1c !important;color:#fff !important}
 .tag.DUPLICATE_BOOKS,.tag.DUPLICATE_PORTAL{background:#7c3aed !important;color:#fff !important}
 /* Source dots */
@@ -587,7 +589,7 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
       </div>
       <div class="sp-checks">
         <label class="check"><input type="checkbox" id="setDefProbable" checked /> Enable probable matches by default</label>
-        <label class="check"><input type="checkbox" id="setDefIgnoreFY" checked /> Ignore FY prefix in invoice nos</label>
+        <label class="check"><input type="checkbox" id="setDefIgnoreFY" checked /> Ignore FY prefix / suffix in invoice nos</label>
         <label class="check"><input type="checkbox" id="setDefRcm" checked /> Flag RCM separately</label>
         <label class="check"><input type="checkbox" id="setDefCN" checked /> Include credit / debit notes</label>
         <label class="check"><input type="checkbox" id="setDefInelig" /> Zero-out ineligible ITC by default</label>
@@ -756,6 +758,26 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
     <p class="map-help">Auto-detection supports Tally, Zoho Books, Busy, Marg, SAP/Oracle, QuickBooks, Vyapar, myBillBook and generic CSV/Excel. Agar kisi software ke column names alag ho to dropdown se manually map karke Apply Mapping karein.</p>
   </div>
 
+  <div class="card books-map gstr-map" id="gstrMapPanel">
+    <button type="button" class="map-toggle" id="gstrMapToggle" aria-expanded="false">
+      <span class="map-toggle-title"><span class="dot g2b"></span> GSTR-2B Header &amp; Column Mapping</span>
+      <span class="map-toggle-side"><small id="gstrMapSummary">Click to inspect detected header</small><span class="map-chevron">⌄</span></span>
+    </button>
+    <div class="map-top">
+      <div class="field"><label>GSTR-2B sheet / table</label><select id="gstrMapSheet"></select></div>
+      <div class="field small"><label>Header row number</label><input type="number" id="gstrHeaderRow" value="1" min="1" step="1" /></div>
+      <div class="field small"><label>Header rows</label><select id="gstrHeaderSpan"><option value="auto">Auto (1 or 2)</option><option value="1">1 row</option><option value="2">2 rows</option></select></div>
+      <button type="button" class="btn-s" id="btnGstrAutoMap">Auto-detect Header</button>
+      <span class="map-badge" id="gstrMapStatus">Waiting for GSTR-2B file</span>
+    </div>
+    <div class="map-grid" id="gstrMapGrid"></div>
+    <div class="map-actions">
+      <button type="button" class="btn-p" id="btnApplyGstrMap">Apply GSTR Mapping</button>
+      <span class="privacy">Two-row GST portal headers are automatically combined. Header row manually change karke re-import bhi kar sakte hain.</span>
+    </div>
+    <p class="map-help">CSV/XLSX mein auto-detected header galat ho to Sheet, Header Row aur Header Rows select karein. GSTIN, Invoice No, Date, Taxable Value aur tax columns manually map kiye ja sakte hain.</p>
+  </div>
+
   <!-- Settings -->
   <div class="card settings">
     <h4>② Settings &amp; matching rules</h4>
@@ -780,7 +802,7 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
     </div>
     <div class="checks">
       <label class="check"><input type="checkbox" id="optProbable" checked /> Probable invoice match</label>
-      <label class="check"><input type="checkbox" id="optIgnoreFY" checked /> Ignore FY prefix in inv no (e.g. 23-24/)</label>
+      <label class="check"><input type="checkbox" id="optIgnoreFY" checked /> Ignore FY prefix / suffix in inv no (e.g. 23-24/)</label>
       <label class="check"><input type="checkbox" id="optRcmSep" checked /> Flag RCM separately</label>
       <label class="check"><input type="checkbox" id="optCreditNotes" checked /> Include credit / debit notes</label>
       <label class="check"><input type="checkbox" id="optIneligible" /> Treat ineligible ITC as ₹0 (cannot claim)</label>
@@ -900,13 +922,13 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 </div>
 
 <footer>
-  GST Nexus v2.7 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
+  GST Nexus v3.0 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
   Copyright © Chirag Kachhad 2026 · @digigoindia
 </footer>
 
 <script>
-/* GST Nexus v2.7 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
-/* GST NEXUS v2.7 engine p1 — utils + parse */
+/* GST Nexus v3.0 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
+/* GST NEXUS v3.0 engine p1 — utils + parse */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const fmt = n => {
@@ -942,7 +964,11 @@ function normInv(inv, ignoreFY=true){
   let raw=String(inv||"").toUpperCase().trim().replace(/\s+/g,"");
   if(ignoreFY){
     raw=raw.replace(/^(FY)?20\d{2}[-/]?\d{0,2}[-/]/i,"");
-    raw=raw.replace(/^(FY)?\d{2}[-/]\d{2}[-/]/i,"");
+    raw=raw.replace(/^(FY)?(\d{2})[-/](\d{2})[-/]/i,(m,fy,a,b)=>((Number(a)+1)%100===Number(b)?"":m));
+    // Also remove financial-year suffixes used by books but omitted in GSTR-2B,
+    // e.g. 4/26-27, J0017012/26-27, IE-011-26-27 and S000084/2627.
+    raw=raw.replace(/[-/](?:20)?\d{2}[-/]\d{2}$/i,"");
+    raw=raw.replace(/[-/](\d{2})(\d{2})$/i,(m,a,b)=>((Number(a)+1)%100===Number(b)?"":m));
   }
   // GST/Tally frequently differ only by /, -, spaces or insignificant zeros.
   // Split letters and numeric blocks, remove punctuation and trim numeric zeros.
@@ -1046,13 +1072,28 @@ function parseDelimitedMatrix(text){
   }
   pf();pr();return rows;
 }
+function isHeaderContinuation(row){
+  const vals=(row||[]).map(v=>String(v??"").trim()).filter(Boolean);if(vals.length<2)return false;
+  let hits=0,dataLike=0;
+  for(const v of vals){const n=normHeader(v);if(/invoice|document|voucher|bill|date|type|value|amount|tax|igst|cgst|sgst|utgst|cess|gstin|supplier|party|name|taxable|assessable/.test(n))hits++;if(/^\d{1,2}[\/\-.][A-Za-z0-9]{1,9}[\/\-.]\d{2,4}$/.test(v)||validRecipientGstin?.(v)||/^[-+]?\d[\d,.]*$/.test(v))dataLike++;}
+  return hits>=2&&dataLike<=Math.floor(vals.length/2);
+}
+function compositeHeaderInfo(matrix,headerIdx,forcedSpan="auto"){
+  const top=matrix[headerIdx]||[],next=matrix[headerIdx+1]||[],span=forcedSpan==="1"||forcedSpan===1?1:forcedSpan==="2"||forcedSpan===2?2:(isHeaderContinuation(next)?2:1),width=Math.max(top.length,span===2?next.length:0),headers=[];let carry="";
+  for(let c=0;c<width;c++){
+    const base=String(top[c]??"").trim(),child=span===2?String(next[c]??"").trim():"";if(base)carry=base;
+    if(child){const parent=base||carry;headers[c]=parent&&normHeader(parent)!==normHeader(child)?`${parent} - ${child}`:child;}
+    else headers[c]=base||`col${c}`;
+  }
+  return{headerIdx,span,headers};
+}
 function mappedRowsFromMatrix(matrix,headerIdx,preset="auto",manualMap=null){
   if(!matrix.length)return[];
-  const headers=(matrix[headerIdx]||[]).map((h,idx)=>String(h||"").trim()||`col${idx}`),out=[];
+  const info=compositeHeaderInfo(matrix,headerIdx,manualMap?.__span||"auto"),headers=info.headers,out=[];
   const autoMap=manualMap?null:mapHeaders(headers,preset);
-  for(let r=headerIdx+1;r<matrix.length;r++){
+  for(let r=headerIdx+info.span;r<matrix.length;r++){
     const row=matrix[r]||[];if(row.every(c=>c===null||c===undefined||String(c).trim()===""))continue;const mapped={};
-    if(manualMap){for(const[canon,col]of Object.entries(manualMap))if(Number.isInteger(col)&&col>=0)mapped[canon]=row[col];}
+    if(manualMap){for(const[canon,col]of Object.entries(manualMap))if(!canon.startsWith("__")&&Number.isInteger(col)&&col>=0)mapped[canon]=row[col];}
     else headers.forEach((h,idx)=>{const c=autoMap[h];if(c)mapped[c]=row[idx];});
     if(!mapped.gstin&&!mapped.invoice_no&&mapped.taxable_value===undefined)continue;out.push(mapped);
   }
@@ -1112,7 +1153,7 @@ function detectDataRole(sheets){
     const sn=String(sh.name||"").toLowerCase();
     if(/^(b2b|b2ba|cdnr|cdnra|impg|impgsez|isd|ecom)$/.test(sn.trim()))portal+=4;
     if(/purchase|tally|books|register|voucher/.test(sn))books+=2;
-    const matrix=sh.matrix||[],hi=findHeaderRow(matrix,80),joined=(matrix[hi]||[]).map(normHeader).join(" | ");
+    const matrix=sh.matrix||[],hi=findHeaderRow(matrix,80),joined=compositeHeaderInfo(matrix,hi).headers.map(normHeader).join(" | ");
     if(joined.includes("gstin of supplier"))portal+=3;
     if(joined.includes("invoice details"))portal+=3;
     if(joined.includes("gstr-1")||joined.includes("gstr 1")||joined.includes("itc availability"))portal+=4;
@@ -1131,7 +1172,7 @@ function booksAutoCandidate(sheets,preset){
   sheets.forEach((sh,si)=>{
     if(!sh.matrix?.length)return;const hi=findHeaderRow(sh.matrix,80);
     const inv=mappedRowsFromMatrix(sh.matrix,hi,preset).map(r=>rowToInvoice(r,"books")).filter(Boolean);
-    const headers=(sh.matrix[hi]||[]).map((h,i)=>String(h||"").trim()||`col${i}`),mapped=Object.keys(mapHeaders(headers,preset)).length;
+    const hInfo=compositeHeaderInfo(sh.matrix,hi),headers=hInfo.headers,mapped=Object.keys(mapHeaders(headers,preset)).length;
     const score=inv.length*20+mapped;
     if(score>best.score)best={sheetIndex:si,headerIdx:hi,invoices:inv,score};
   });
@@ -1145,15 +1186,15 @@ function renderBooksMapper(redetect=true){
   const sh=booksImportState.sheets[Number(sheetSel.value)||0];
   if(redetect)booksImportState.headerIdx=findHeaderRow(sh.matrix,80);
   const hi=Math.max(0,Math.min(sh.matrix.length-1,Number(booksImportState.headerIdx)||0));headerInput.value=hi+1;
-  const headers=(sh.matrix[hi]||[]).map((h,i)=>String(h||"").trim()||`Column ${i+1}`),auto=mapHeaders(headers,$("#softPreset")?.value||"auto");
+  const hInfo=compositeHeaderInfo(sh.matrix,hi),headers=hInfo.headers.map((h,i)=>h||`Column ${i+1}`),auto=mapHeaders(headers,$("#softPreset")?.value||"auto");
   grid.innerHTML=BOOK_MAP_FIELDS.map(([field,label,required])=>{
     let selected=-1;headers.forEach((h,i)=>{if(auto[h]===field&&selected<0)selected=i;});
     const options=['<option value="-1">-- Not mapped --</option>'].concat(headers.map((h,i)=>`<option value="${i}" ${i===selected?'selected':''}>${String.fromCharCode(65+(i%26))}${i>=26?Math.floor(i/26):''} - ${esc(h)}</option>`));
     return `<div class="map-item"><label>${required?'<b>*</b> ':''}${esc(label)}</label><select data-book-field="${field}">${options.join("")}</select></div>`;
   }).join("");
   const mappedCount=BOOK_MAP_FIELDS.filter(([f])=>grid.querySelector(`[data-book-field="${f}"]`)?.value!=="-1").length;
-  $("#booksMapStatus").textContent=`${sh.name} · header row ${hi+1} · ${mappedCount}/${BOOK_MAP_FIELDS.length} fields mapped`;
-  if($("#booksMapSummary"))$("#booksMapSummary").textContent=`${sh.name} · row ${hi+1} · ${mappedCount}/${BOOK_MAP_FIELDS.length} mapped`;
+  $("#booksMapStatus").textContent=`${sh.name} · header row ${hi+1}${hInfo.span===2?' (2-row header)':''} · ${mappedCount}/${BOOK_MAP_FIELDS.length} fields mapped`;
+  if($("#booksMapSummary"))$("#booksMapSummary").textContent=`${sh.name} · row ${hi+1}${hInfo.span===2?' + next row':''} · ${mappedCount}/${BOOK_MAP_FIELDS.length} mapped`;
 }
 function applyBooksMapping(showMessage=true){
   if(!booksImportState?.sheets?.length)return;
@@ -1181,9 +1222,54 @@ function prepareBooksImporter(sheets){
   updateReady();
 }
 
+
+const GSTR_MAP_FIELDS=[
+  ["gstin","Supplier GSTIN",true],["party_name","Trade / Legal Name",false],["invoice_no","Invoice / Note No",true],
+  ["invoice_date","Invoice / Note Date",true],["taxable_value","Taxable Value",true],["igst","IGST",false],
+  ["cgst","CGST",false],["sgst","SGST / UTGST",false],["cess","Cess",false],["invoice_value","Invoice Value",false],
+  ["voucher_type","Invoice / Note Type",false],["rcm","Reverse Charge",false],["return_period","Return / Filing Period",false],["itc_eligibility","ITC Availability",false]
+];
+function gstrAutoCandidate(sheets){
+  let best={sheetIndex:0,headerIdx:0,count:0,score:-1};
+  sheets.forEach((sh,si)=>{if(!sh.matrix?.length)return;const hi=findHeaderRow(sh.matrix,80),sec=detectSection(sh.name),rows=mappedRowsFromMatrix(sh.matrix,hi,"auto"),count=rows.map(r=>rowToInvoice(r,"2b",sec)).filter(Boolean).length,headers=compositeHeaderInfo(sh.matrix,hi).headers,mapped=Object.keys(mapHeaders(headers,"auto")).length,score=count*20+mapped;if(score>best.score)best={sheetIndex:si,headerIdx:hi,count,score};});
+  return best;
+}
+function renderGstrMapper(redetect=true){
+  if(!gstrImportState?.sheets?.length)return;const panel=$("#gstrMapPanel"),sheetSel=$("#gstrMapSheet"),headerInput=$("#gstrHeaderRow"),spanSel=$("#gstrHeaderSpan"),grid=$("#gstrMapGrid");panel.classList.add("show");
+  if(!sheetSel.options.length||sheetSel.options.length!==gstrImportState.sheets.length)sheetSel.innerHTML=gstrImportState.sheets.map((x,i)=>`<option value="${i}">${esc(x.name)}</option>`).join("");
+  const si=gstrImportState.sheetIndex||0;sheetSel.value=String(si);const sh=gstrImportState.sheets[si];
+  if(redetect){gstrImportState.headerIdxBySheet[si]=findHeaderRow(sh.matrix,80);gstrImportState.spanBySheet[si]="auto";}
+  const hi=Math.max(0,Math.min(sh.matrix.length-1,Number(gstrImportState.headerIdxBySheet[si]??0))),forced=gstrImportState.spanBySheet[si]||"auto",info=compositeHeaderInfo(sh.matrix,hi,forced),headers=info.headers.map((h,i)=>h||`Column ${i+1}`),auto=mapHeaders(headers,"auto");
+  headerInput.value=hi+1;spanSel.value=forced;
+  grid.innerHTML=GSTR_MAP_FIELDS.map(([field,label,required])=>{let selected=-1;headers.forEach((h,i)=>{if(auto[h]===field&&selected<0)selected=i;});const saved=gstrImportState.manualMaps[si]?.[field];if(Number.isInteger(saved))selected=saved;const options=['<option value="-1">-- Not mapped --</option>'].concat(headers.map((h,i)=>`<option value="${i}" ${i===selected?'selected':''}>${String.fromCharCode(65+(i%26))}${i>=26?Math.floor(i/26):''} - ${esc(h)}</option>`));return`<div class="map-item"><label>${required?'<b>*</b> ':''}${esc(label)}</label><select data-gstr-field="${field}">${options.join("")}</select></div>`;}).join("");
+  const mappedCount=GSTR_MAP_FIELDS.filter(([f])=>grid.querySelector(`[data-gstr-field="${f}"]`)?.value!=="-1").length,spanText=info.span===2?"2-row header":"1-row header";
+  $("#gstrMapStatus").textContent=`${sh.name} · row ${hi+1} · ${spanText} · ${mappedCount}/${GSTR_MAP_FIELDS.length} mapped`;$("#gstrMapSummary").textContent=`${sh.name} · row ${hi+1} · ${spanText} · click to edit`;
+}
+function prepareGstrMapper(sheets,profile,fileName){
+  if(!sheets?.length){gstrImportState=null;$("#gstrMapPanel").classList.remove("show","open");return;}
+  const best=gstrAutoCandidate(sheets);gstrImportState={sheets,profile:profile||{},fileName:fileName||name2b,sheetIndex:best.sheetIndex,headerIdxBySheet:{[best.sheetIndex]:best.headerIdx},spanBySheet:{[best.sheetIndex]:"auto"},manualMaps:{}};
+  $("#gstrMapPanel").classList.remove("open");$("#gstrMapToggle").setAttribute("aria-expanded","false");renderGstrMapper(false);
+}
+function parseGstrImportState(){
+  const all=[];
+  for(let si=0;si<gstrImportState.sheets.length;si++){
+    const sh=gstrImportState.sheets[si],sn=sh.name.toLowerCase();if(/^help|instruction|readme/.test(sn)||/summary only|gstr-2b summary|itc summary|get ready/.test(sn))continue;
+    const hi=Number(gstrImportState.headerIdxBySheet[si]??findHeaderRow(sh.matrix,80)),manual=gstrImportState.manualMaps[si]||null,sec=detectSection(sh.name),rows=mappedRowsFromMatrix(sh.matrix,hi,"auto",manual);
+    for(const mapped of rows){if(["cdnr","cdnur","cdnra","cdn"].includes(sec)&&!mapped.voucher_type)mapped.voucher_type="C";const inv=rowToInvoice(mapped,"2b",sec);if(inv&&(inv.invoice_no||inv.taxable_value))all.push(inv);}
+  }
+  const uniq=new Map();for(const inv of all){const k=[inv.gstin,inv.invoice_no_norm,inv.section,inv.taxable_value,inv.voucher_type].join("|");if(!uniq.has(k))uniq.set(k,inv);}return[...uniq.values()];
+}
+function applyGstrMapping(){
+  if(!gstrImportState?.sheets?.length)return;const si=Number($("#gstrMapSheet").value)||0,sh=gstrImportState.sheets[si],hi=Math.max(0,Math.min(sh.matrix.length-1,(Number($("#gstrHeaderRow").value)||1)-1)),manual={__span:$("#gstrHeaderSpan").value||"auto"};
+  GSTR_MAP_FIELDS.forEach(([field])=>{const v=Number($(`#gstrMapGrid [data-gstr-field="${field}"]`)?.value);if(Number.isInteger(v)&&v>=0)manual[field]=v;});const missing=["gstin","invoice_no","taxable_value"].filter(f=>manual[f]===undefined);if(missing.length){showAlert("GSTR mapping required: "+missing.join(", "),"err");return;}
+  gstrImportState.sheetIndex=si;gstrImportState.headerIdxBySheet[si]=hi;gstrImportState.spanBySheet[si]=manual.__span;gstrImportState.manualMaps[si]=manual;data2b=parseGstrImportState();applyGstr2bProfile(gstrImportState.profile);
+  $("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${gstrImportState.fileName}\n${data2b.length} docs · manual header mapping applied\n${profileInfoText()}`;$("#gstrMapPanel").classList.remove("open");$("#gstrMapToggle").setAttribute("aria-expanded","false");$("#gstrMapSummary").textContent=`Imported ${data2b.length} docs · click to edit header`;
+  if(!data2b.length)showAlert("Selected GSTR header/mapping se records nahi mile.","err");else showAlert(`GSTR-2B re-imported: ${data2b.length} documents`,"ok");updateReady();
+}
+
 const SHEET_SECTION={"b2b":"b2b","b2ba":"b2ba","cdnr":"cdnr","cdnra":"cdnra","cdn":"cdnr","cdnur":"cdnur","impg":"impg","impgsez":"impgsez","imps":"imps","isd":"isd","eco":"eco","ecom":"eco"};
 function detectSection(sheetName){const sn=String(sheetName).trim().toLowerCase();for(const[key,sec]of Object.entries(SHEET_SECTION)){if(sn===key||sn.includes(key))return sec;}if(sn.includes("b2b"))return"b2b";if(sn.includes("cdn"))return"cdnr";if(sn.includes("impg"))return"impg";return"b2b";}
-function loadPortalFromWorkbook(wb,sourceTag){const invoices=[],sheetStats=[];for(const name of wb.SheetNames){const sn=name.toLowerCase();if(/^help|instruction|readme/.test(sn))continue;if(/summary only|gstr-2b summary|itc summary|get ready/.test(sn))continue;const sec=detectSection(name);const matrix=sheetToMatrix(wb.Sheets[name]);if(matrix.length<2)continue;const hIdx=findHeaderRow(matrix);const headersJoined=(matrix[hIdx]||[]).map(c=>normHeader(c)).join(" ");if(!(/gstin|invoice|note number|boe|bill number|document/.test(headersJoined)))continue;const rows=matrixToMappedRows(matrix,hIdx,"auto");let count=0;for(const mapped of rows){if(["cdnr","cdnur","cdnra","cdn"].includes(sec)&&!mapped.voucher_type)mapped.voucher_type="C";const inv=rowToInvoice(mapped,sourceTag,sec);if(inv&&(inv.invoice_no||inv.taxable_value)){if(["cdnr","cdn","cdnur","cdnra"].includes(sec)&&inv.voucher_type==="Invoice")inv.voucher_type="Credit Note";invoices.push(inv);count++;}}if(count)sheetStats.push(`${name}: ${count}`);}const uniq=new Map();for(const inv of invoices){const k=[inv.gstin,inv.invoice_no_norm,inv.section,inv.taxable_value,inv.voucher_type].join("|");if(!uniq.has(k))uniq.set(k,inv);}return{invoices:[...uniq.values()],sheetStats};}
+function loadPortalFromWorkbook(wb,sourceTag){const invoices=[],sheetStats=[];for(const name of wb.SheetNames){const sn=name.toLowerCase();if(/^help|instruction|readme/.test(sn))continue;if(/summary only|gstr-2b summary|itc summary|get ready/.test(sn))continue;const sec=detectSection(name);const matrix=sheetToMatrix(wb.Sheets[name]);if(matrix.length<2)continue;const hIdx=findHeaderRow(matrix);const headersJoined=compositeHeaderInfo(matrix,hIdx).headers.map(c=>normHeader(c)).join(" ");if(!(/gstin|invoice|note number|boe|bill number|document/.test(headersJoined)))continue;const rows=matrixToMappedRows(matrix,hIdx,"auto");let count=0;for(const mapped of rows){if(["cdnr","cdnur","cdnra","cdn"].includes(sec)&&!mapped.voucher_type)mapped.voucher_type="C";const inv=rowToInvoice(mapped,sourceTag,sec);if(inv&&(inv.invoice_no||inv.taxable_value)){if(["cdnr","cdn","cdnur","cdnra"].includes(sec)&&inv.voucher_type==="Invoice")inv.voucher_type="Credit Note";invoices.push(inv);count++;}}if(count)sheetStats.push(`${name}: ${count}`);}const uniq=new Map();for(const inv of invoices){const k=[inv.gstin,inv.invoice_no_norm,inv.section,inv.taxable_value,inv.voucher_type].join("|");if(!uniq.has(k))uniq.set(k,inv);}return{invoices:[...uniq.values()],sheetStats};}
 function parsePortalItem(item,section,sourceTag){const results=[];const gstin=normGstin(item.ctin||item.gstin||"");const trdnm=String(item.trdnm||item.trdNm||item.cname||item.trade_name||"");let invList=item.inv||item.nt||item.documents||[];if(item.inv&&!Array.isArray(item.inv))invList=[item.inv];for(const inv of invList){if(!inv||typeof inv!=="object")continue;const inv_no=String(inv.inum||inv.ntnum||inv.invoicenum||inv.docnum||inv.boe_num||"");const inv_dt=inv.dt||inv.idt||inv.ntdt||inv.invoice_date||inv.docdt||inv.refdt||"";let taxable=0,igst=0,cgst=0,sgst=0,cess=0;const itms=inv.itms||inv.items||[];if(itms.length){for(const it of itms){const det=it.itm_det||it.item_details||it;taxable+=num(det.txval??det.taxable_value);igst+=num(det.igst??det.iamt);cgst+=num(det.cgst??det.camt);sgst+=num(det.sgst??det.samt);cess+=num(det.cess??det.csamt);}}else{taxable=num(inv.txval??inv.taxable_value??inv.val);igst=num(inv.igst??inv.iamt??inv.igstamt);cgst=num(inv.cgst??inv.camt??inv.cgstamt);sgst=num(inv.sgst??inv.samt??inv.sgstamt);cess=num(inv.cess??inv.csamt);}let invVal=num(inv.val??inv.invoice_value);if(!invVal)invVal=Math.round((taxable+igst+cgst+sgst+cess)*100)/100;const rchrg=String(inv.rchrg||inv.rev||"N").toUpperCase();const rcm=(rchrg==="Y"||rchrg==="YES")?"Y":"N";const itc=inv.itc||inv.itcavl||{};const elg=String((itc&&itc.elg)||itc.eligibility||"Y").toUpperCase();const itc_elig=["Y","YES","ELIGIBLE",""].includes(elg)?"Eligible":"Ineligible";let vtype="Invoice";const ntyp=String(inv.ntty||inv.note_type||"").toUpperCase();if(["C","CRN","CNOTE"].includes(ntyp))vtype="Credit Note";else if(["D","DBN","DNOTE"].includes(ntyp))vtype="Debit Note";if(["cdnr","cdn","cdnur"].includes(section)&&vtype==="Invoice")vtype=ntyp==="D"?"Debit Note":"Credit Note";if(vtype==="Credit Note"&&taxable>0){taxable=-taxable;igst=-igst;cgst=-cgst;sgst=-sgst;cess=-cess;invVal=-Math.abs(invVal);}const ignoreFY=$("#optIgnoreFY")?.checked!==false;results.push({source:sourceTag,gstin,party_name:trdnm,invoice_no:inv_no,invoice_no_norm:normInv(inv_no,ignoreFY),invoice_date:parseDate(inv_dt),taxable_value:taxable,igst,cgst,sgst,cess,invoice_value:invVal,place_of_supply:String(inv.pos||inv.place_of_supply||""),voucher_type:vtype,rcm,itc_eligibility:itc_elig,section,get total_tax(){return this.igst+this.cgst+this.sgst+this.cess;},get match_key(){return this.gstin+"|"+this.invoice_no_norm;}});}return results;}
 function walkPortalJson(data,sourceTag){const invoices=[];const sectionKeys={b2b:"b2b",b2ba:"b2ba",cdnr:"cdnr",cdnra:"cdnra",cdn:"cdnr",cdnur:"cdnur",impg:"impg",impgsez:"impgsez",imps:"imps",isd:"isd",eco:"eco",ecom:"eco"};const seen=new Set();function harvest(obj,path=""){if(!obj)return;if(Array.isArray(obj)){obj.forEach((x,i)=>harvest(x,path+`[${i}]`));return;}if(typeof obj!=="object")return;for(const[k,v]of Object.entries(obj)){const kl=String(k).toLowerCase();if(sectionKeys[kl]&&Array.isArray(v)){const key=path+"."+kl;if(seen.has(key))continue;seen.add(key);const sec=sectionKeys[kl];for(const item of v){if(!item||typeof item!=="object")continue;if(["impg","impgsez","imps"].includes(sec)&&(item.inum||item.boe_num||item.refdt))invoices.push(...parsePortalItem({ctin:item.sgstin||item.ctin||"",trdnm:item.trdnm||item.portcode||"Import",inv:[item]},sec,sourceTag));else invoices.push(...parsePortalItem(item,sec,sourceTag));}}else harvest(v,path+"."+k);}}harvest(data);if(data.data)harvest(data.data);if(data.data&&data.data.docdata)harvest(data.data.docdata);const uniq=new Map();for(const inv of invoices){const k=[inv.gstin,inv.invoice_no_norm,inv.section,inv.taxable_value,inv.voucher_type].join("|");if(!uniq.has(k))uniq.set(k,inv);}return[...uniq.values()];}
 
@@ -1237,12 +1323,19 @@ function monthKeyFromToken(token){
 }
 function fyFromMonthKey(key){const[y,m]=String(key||"").split("-").map(Number);if(!y||!m)return"";const start=m>=4?y:y-1;return`${start}-${String(start+1).slice(-2)}`;}
 function quarterFromMonthKey(key){const m=Number(String(key||"").split("-")[1]);return m>=4&&m<=6?"Q1":m>=7&&m<=9?"Q2":m>=10&&m<=12?"Q3":"Q4";}
+function enrichProfileFromFilename(profile,name){
+  profile=profile||{companyName:"",gstin:"",periodTokens:[]};const n=String(name||"").toUpperCase();
+  if(!profile.gstin){const gm=n.match(/(?:^|[_\-\s])(\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9])(?:$|[_\-\s.])/);if(gm)profile.gstin=gm[1];}
+  const pm=n.match(/(?:^|[_\-\s])(0[1-9]|1[0-2])((?:20)\d{2})(?:$|[_\-\s.])/);if(pm)profile.periodTokens=(profile.periodTokens||[]).concat(pm[1]+pm[2]);
+  return profile;
+}
 function completePortalProfile(profile,invoices){
   profile=profile||{companyName:"",gstin:"",periodTokens:[]};const monthSet=new Set();
   for(const t of profile.periodTokens||[]){const k=monthKeyFromToken(t);if(k)monthSet.add(k);}
   for(const inv of invoices||[]){const pk=monthKeyFromToken(inv.return_period);if(pk)monthSet.add(pk);else if(/^\d{4}-\d{2}/.test(inv.invoice_date||""))monthSet.add(inv.invoice_date.slice(0,7));}
-  const months=[...monthSet].sort();let type="",label="";
-  if(months.length===1){type="monthly";label=new Date(months[0]+"-01T00:00:00").toLocaleString("en-IN",{month:"short",year:"numeric"});}
+  const months=[...monthSet].sort(),explicit=[...new Set((profile.periodTokens||[]).map(monthKeyFromToken).filter(Boolean))];let type="",label="";
+  if(explicit.length===1){const em=explicit[0],sameQuarter=months.filter(m=>quarterFromMonthKey(m)===quarterFromMonthKey(em)&&fyFromMonthKey(m)===fyFromMonthKey(em));if(sameQuarter.length>=2){type="quarterly";label=`${quarterFromMonthKey(em)} · FY ${fyFromMonthKey(em)}`;}else{type="monthly";label=new Date(em+"-01T00:00:00").toLocaleString("en-IN",{month:"short",year:"numeric"});}}
+  else if(months.length===1){type="monthly";label=new Date(months[0]+"-01T00:00:00").toLocaleString("en-IN",{month:"short",year:"numeric"});}
   else if(months.length>1&&months.length<=3&&new Set(months.map(quarterFromMonthKey)).size===1&&new Set(months.map(fyFromMonthKey)).size===1){type="quarterly";label=`${quarterFromMonthKey(months[0])} · FY ${fyFromMonthKey(months[0])}`;}
   else if(months.length>1){type="yearly";const fys=[...new Set(months.map(fyFromMonthKey).filter(Boolean))];label=fys.length===1?`FY ${fys[0]}`:`${months[0]} to ${months[months.length-1]}`;}
   return{companyName:profile.companyName||"",gstin:profile.gstin||"",periodTokens:profile.periodTokens||[],months,detectedType:type,detectedLabel:label};
@@ -1264,6 +1357,19 @@ function updatePeriodUI(){
   $("#periodMonthField")?.classList.toggle("hidden",type!=="monthly");$("#periodQuarterField")?.classList.toggle("hidden",type!=="quarterly");
   $("#periodFYField")?.classList.toggle("hidden",!['quarterly','yearly'].includes(type));$("#periodDetectedField")?.classList.toggle("hidden",type!=="auto");syncPeriodValue();
 }
+function selectedPeriodMonths(){
+  const type=$("#periodType")?.value||"auto";
+  if(type==="auto")return new Set(); // Auto means reconcile the complete uploaded statement.
+  if(type==="monthly"){const m=$("#periodMonth")?.value||"";return new Set(m?[m]:[]);}
+  const fy=$("#periodFY")?.value||"",start=Number(fy.slice(0,4));if(!start)return new Set();const out=[];
+  if(type==="yearly"){for(let m=4;m<=12;m++)out.push(`${start}-${String(m).padStart(2,"0")}`);for(let m=1;m<=3;m++)out.push(`${start+1}-${String(m).padStart(2,"0")}`);}
+  else{const q=$("#periodQuarter")?.value||"Q1",map={Q1:[[start,4],[start,5],[start,6]],Q2:[[start,7],[start,8],[start,9]],Q3:[[start,10],[start,11],[start,12]],Q4:[[start+1,1],[start+1,2],[start+1,3]]};for(const[y,m]of map[q])out.push(`${y}-${String(m).padStart(2,"0")}`);}
+  return new Set(out);
+}
+function filterInvoicesByPeriod(list,months){
+  if(!months||!months.size)return(list||[]).slice();
+  return(list||[]).filter(inv=>{const dateMonth=/^\d{4}-\d{2}/.test(inv.invoice_date||"")?inv.invoice_date.slice(0,7):"",periodMonth=monthKeyFromToken(inv.return_period);return months.has(periodMonth||dateMonth);});
+}
 function initPeriodControls(){
   populateFinancialYears();["periodType","periodMonth","periodQuarter","periodFY"].forEach(id=>$(`#${id}`)?.addEventListener("change",updatePeriodUI));updatePeriodUI();
 }
@@ -1280,7 +1386,7 @@ function profileInfoText(){
   if(!gstr2bProfile.companyName&&!gstr2bProfile.gstin)parts.push("Recipient company/GSTIN metadata file me available nahi hai — manual entry required");return parts.join("\n");
 }
 
-/* GST NEXUS v2.7 engine p2 — recon + summary + UI + init */
+/* GST NEXUS v3.0 engine p2 — recon + summary + UI + init */
 const ACTION={
   MATCHED_ALL:"In books + 2A + 2B — can claim now (other GST rules still apply)",
   MATCHED_2B:"In books + GSTR-2B — can claim now in GSTR-3B",
@@ -1292,7 +1398,8 @@ const ACTION={
   PROBABLE_MATCH:"Looks similar (not exact) — check manually",
   INVOICE_MISMATCH:"GSTIN and values match, but invoice number differs — verify/correct invoice number",
   GSTIN_MISMATCH:"Invoice, date and values match, but GSTIN differs — correct party ledger/GSTIN",
-  ONLY_IN_BOOKS:"Only in your books, not in GSTR-2B — cannot claim yet (ask supplier to file GSTR-1)",
+  ONLY_IN_BOOKS:"Purchase invoice only in books, not in GSTR-2B — verify supplier filing",
+  BOOKS_NOTE_NOT_IN_B2B:"Debit/Credit note is in books, but uploaded GSTR file contains B2B only — upload CDNR section for note reconciliation",
   ONLY_IN_2B:"In GSTR-2B but not in your books — add entry or check if wrong",
   ONLY_IN_2A:"Only in GSTR-2A — track supplier / books",
   DUPLICATE_BOOKS:"Same invoice appears twice in books",
@@ -1376,10 +1483,12 @@ function reconcileBooks2bSmart(books,data2b,opts){
   });
   const fuzzyWindow=strength==="loose"?31:Math.max(7,dateTol);
   if(enableProbable){
-    // Stage 2: same GSTIN + same values/date + similar invoice number.
+    // Stage 2: same GSTIN + same values/date. Prefer similar invoice numbers;
+    // if the amount/date candidate is unique, allow even a badly typed invoice no.
     books.forEach((b,i)=>{
-      if(usedB.has(i))return;let best=null;
-      data2b.forEach((t,j)=>{if(usedT.has(j)||b.gstin!==t.gstin)return;const dd=dateAbs(b.invoice_date,t.invoice_date),sim=invSimilarity(b.invoice_no_norm,t.invoice_no_norm);if(componentWithin(b,t,tolerance)&&dd<=fuzzyWindow&&sim>=.45){const score=sim*100-dd;if(!best||score>best.score)best={j,score};}});
+      if(usedB.has(i))return;const candidates=[];
+      data2b.forEach((t,j)=>{if(usedT.has(j)||b.gstin!==t.gstin)return;const dd=dateAbs(b.invoice_date,t.invoice_date),sim=invSimilarity(b.invoice_no_norm,t.invoice_no_norm);if(componentWithin(b,t,tolerance)&&dd<=fuzzyWindow)candidates.push({j,dd,sim,score:sim*100-dd});});
+      let best=null;if(candidates.length===1)best=candidates[0];else for(const c of candidates)if(c.sim>=.45&&(!best||c.score>best.score))best=c;
       if(best){usedB.add(i);usedT.add(best.j);pairs.push({i,j:best.j,stage:"INVOICE"});}
     });
     // Stage 3: same GSTIN + strongly similar invoice. Allows amount/tax mismatch to be exposed.
@@ -1413,9 +1522,10 @@ function reconcileBooks2bSmart(books,data2b,opts){
     }else status="MATCHED_2B";
     results.push(smart2bResult(status,b,t,tolerance,extra));
   }
-  books.forEach((b,i)=>{if(!usedB.has(i))results.push(smart2bResult("ONLY_IN_BOOKS",b,null,tolerance));});
+  const portalHasNotes=data2b.some(x=>x.voucher_type!=="Invoice"||["cdnr","cdnra","cdnur","cdn"].includes(String(x.section||"").toLowerCase()));
+  books.forEach((b,i)=>{if(!usedB.has(i)){const st=b.voucher_type!=="Invoice"&&!portalHasNotes?"BOOKS_NOTE_NOT_IN_B2B":"ONLY_IN_BOOKS";results.push(smart2bResult(st,b,null,tolerance));}});
   data2b.forEach((t,j)=>{if(!usedT.has(j))results.push(smart2bResult("ONLY_IN_2B",null,t,tolerance));});
-  const order={VALUE_MISMATCH:0,TAX_MISMATCH:1,GSTIN_MISMATCH:2,INVOICE_MISMATCH:3,DATE_MISMATCH:4,ONLY_IN_BOOKS:5,ONLY_IN_2B:6,DUPLICATE_BOOKS:7,DUPLICATE_PORTAL:8,MATCHED_2B:20};
+  const order={VALUE_MISMATCH:0,TAX_MISMATCH:1,GSTIN_MISMATCH:2,INVOICE_MISMATCH:3,DATE_MISMATCH:4,ONLY_IN_BOOKS:5,BOOKS_NOTE_NOT_IN_B2B:6,ONLY_IN_2B:7,DUPLICATE_BOOKS:7,DUPLICATE_PORTAL:8,MATCHED_2B:20};
   results.sort((a,b)=>(order[a.status]??99)-(order[b.status]??99));
   return results;
 }
@@ -1435,7 +1545,7 @@ function buildSummary(results,opts={}){
     if(["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)){s.matched++;if(r.portal2b)amounts.matched_taxable+=r.portal2b.taxable_value;else if(r.books)amounts.matched_taxable+=r.books.taxable_value;}
     else if(r.status==="IN_2A_NOT_2B"){s.a_not_b++;s.hold++;const itc=taxOf(r.portal2a||r.books);amounts.pending_2b_itc+=itc;amounts.hold_itc+=itc;s.hold_itc+=itc;}
     else if(["VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status)){s.hold++;const itc=taxOf(r.portal2b||r.portal2a||r.books);amounts.hold_itc+=itc;s.hold_itc+=itc;}
-    else if(["ONLY_IN_BOOKS","DUPLICATE_BOOKS"].includes(r.status)){s.hold++;if(r.books){amounts.only_books_taxable+=r.books.taxable_value;amounts.hold_itc+=taxOf(r.books);s.hold_itc+=taxOf(r.books);}}
+    else if(["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","DUPLICATE_BOOKS"].includes(r.status)){s.hold++;if(r.books){amounts.only_books_taxable+=r.books.taxable_value;amounts.hold_itc+=taxOf(r.books);s.hold_itc+=taxOf(r.books);}}
     else if(r.status==="ONLY_IN_2B"||r.status==="DUPLICATE_PORTAL"){s.portal_only++;if(r.portal2b){amounts.only_2b_taxable+=r.portal2b.taxable_value;amounts.investigate_itc+=taxOf(r.portal2b);}}
     else if(r.status==="ONLY_IN_2A"){s.portal_only++;if(r.portal2a){amounts.only_2a_taxable+=r.portal2a.taxable_value;amounts.investigate_itc+=taxOf(r.portal2a);}}
   }
@@ -1446,7 +1556,7 @@ function buildSummary(results,opts={}){
   return{counts,amounts,supplier_summary:supplier,total:results.length,generated_at:new Date().toLocaleString("en-IN")};
 }
 function toRow(r){const b=r.books,t=r.portal2b,a=r.portal2a;let diff="";if(b&&t)diff=+(b.taxable_value-t.taxable_value).toFixed(2);else if(b&&a)diff=+(b.taxable_value-a.taxable_value).toFixed(2);return{status:r.status,action:r.action,remarks:r.remarks,gstin:(b&&t&&b.gstin!==t.gstin)?`${b.gstin} → ${t.gstin}`:(r.gstin||""),gstin_books:b?.gstin||"",gstin_2b:t?.gstin||"",party_name:r.party_name||"",has_books:!!b,has_2b:!!t,has_2a:!!a,invoice_no_books:b?.invoice_no||"",invoice_no_2b:t?.invoice_no||"",invoice_no_2a:a?.invoice_no||"",invoice_date:(b?.invoice_date)||(t?.invoice_date)||(a?.invoice_date)||"",taxable_books:b?b.taxable_value:"",taxable_2b:t?t.taxable_value:"",taxable_2a:a?a.taxable_value:"",taxable_diff:diff,total_tax_books:b?b.total_tax:"",total_tax_2b:t?t.total_tax:"",total_tax_2a:a?a.total_tax:"",voucher_type:(b||t||a)?.voucher_type||"",rcm:(b||t||a)?.rcm||""};}
-let mode="2b",booksData=[],data2b=[],data2a=[],booksName="",name2b="",name2a="",lastResults=[],lastSummary=null,filterStatus="ALL",booksImportState=null;
+let mode="2b",booksData=[],data2b=[],data2a=[],booksName="",name2b="",name2a="",lastResults=[],lastSummary=null,filterStatus="ALL",booksImportState=null,gstrImportState=null;
 const SETTINGS_KEY="gst_nexus_settings_v3";
 const DEFAULT_SETTINGS={theme:"pearl",density:"comfortable",fontScale:1,compactTable:false,hideActions:false,reduceMotion:false,stickyHeader:true,defaultMode:"2b",defaultSoft:"auto",defTol:1,defDateTol:0,defStrength:"smart",defProbable:true,defIgnoreFY:true,defRcm:true,defCN:true,defInelig:false,autoRun:false,defCompany:"",defGstin:"",defPeriod:"",exportMethod:true,exportFollow:true,exportScore:true,exportBom:true,confirmExport:false,exportPrefix:"GST_Nexus"};
 let settings={...DEFAULT_SETTINGS};
@@ -1470,11 +1580,12 @@ function updateModeUI(){$$(".mode").forEach(m=>m.classList.toggle("active",m.dat
 function updateReady(){const needBooks=mode!=="2a2b",need2b=mode==="2b"||mode==="both"||mode==="2a2b",need2a=mode==="2a"||mode==="both"||mode==="2a2b";const ok=(!needBooks||booksData.length)&&(!need2b||data2b.length)&&(!need2a||data2a.length)&&([booksData.length,data2b.length,data2a.length].filter(x=>x>0).length>=2||(mode==="2b"&&booksData.length&&data2b.length)||(mode==="2a"&&booksData.length&&data2a.length));$("#btnRun").disabled=!ok;}
 function clearUploadedData(){
   const oldProfile={...gstr2bProfile};
-  booksData=[];data2b=[];data2a=[];booksName="";name2b="";name2a="";booksImportState=null;lastResults=[];lastSummary=null;filterStatus="ALL";
+  booksData=[];data2b=[];data2a=[];booksName="";name2b="";name2a="";booksImportState=null;gstrImportState=null;lastResults=[];lastSummary=null;filterStatus="ALL";
   ["fileBooks","file2b","file2a"].forEach(id=>{const el=$(`#${id}`);if(el)el.value="";});
   [["booksInfo",""],["portal2bInfo",""],["portal2aInfo",""]].forEach(([id])=>{const el=$(`#${id}`);if(el){el.textContent="";el.style.display="none";}});
   const panel=$("#booksMapPanel");panel.classList.remove("show","open");$("#booksMapToggle").setAttribute("aria-expanded","false");
   $("#booksMapSheet").innerHTML="";$("#booksMapGrid").innerHTML="";$("#booksMapStatus").textContent="Waiting for file";$("#booksMapSummary").textContent="Click to open column mapping";
+  const gpanel=$("#gstrMapPanel");gpanel.classList.remove("show","open");$("#gstrMapToggle").setAttribute("aria-expanded","false");$("#gstrMapSheet").innerHTML="";$("#gstrMapGrid").innerHTML="";$("#gstrMapStatus").textContent="Waiting for GSTR-2B file";$("#gstrMapSummary").textContent="Click to inspect detected header";
   if(oldProfile.companyName&&$("#company").value===oldProfile.companyName)$("#company").value="";
   if(oldProfile.gstin&&$("#gstin").value===oldProfile.gstin)$("#gstin").value="";
   gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};
@@ -1506,9 +1617,9 @@ async function loadBooksFile(file,skipRoleCheck=false){
 async function load2bFile(file,skipRoleCheck=false){
   name2b=file.name;setProgress(20);
   try{
-    const ext=extOf(file.name);let profile={companyName:"",gstin:"",periodTokens:[]},detail="";
+    const ext=extOf(file.name);let profile={companyName:"",gstin:"",periodTokens:[]},detail="",tabularSheets=[];
     if(["xlsx","xls","xlsm"].includes(ext)){
-      const wb=await readWorkbookFromFile(file),matrices=wb.SheetNames.map(name=>({name,matrix:sheetToMatrix(wb.Sheets[name])}));
+      const wb=await readWorkbookFromFile(file),matrices=wb.SheetNames.map(name=>({name,matrix:sheetToMatrix(wb.Sheets[name])}));tabularSheets=matrices;
       if(!skipRoleCheck&&detectDataRole(matrices)==="books"){
         data2b=[];$("#file2b").value="";setProgress(0);await loadBooksFile(file,true);showAlert("Purchase/Books file GSTR-2B box me select hui thi. Tool ne ise automatically Books side par move kar diya.","info");return;
       }
@@ -1520,35 +1631,36 @@ async function load2bFile(file,skipRoleCheck=false){
       const text=await file.text();
       try{const obj=JSON.parse(text);data2b=walkPortalJson(obj,"2b");profile=extractProfileFromJson(obj);detail=`${data2b.length} docs (JSON)`;}
       catch{
-        const matrix=parseDelimitedMatrix(text),tables=[{name:"CSV",matrix}];
+        const matrix=parseDelimitedMatrix(text),tables=[{name:"CSV",matrix}];tabularSheets=tables;
         if(!skipRoleCheck&&detectDataRole(tables)==="books"){
           data2b=[];$("#file2b").value="";setProgress(0);await loadBooksFile(file,true);showAlert("Purchase/Books file GSTR-2B box me select hui thi. Tool ne ise automatically Books side par move kar diya.","info");return;
         }
         data2b=mappedRowsFromMatrix(matrix,findHeaderRow(matrix,60),"auto").map(r=>rowToInvoice(r,"2b","b2b")).filter(Boolean);profile=extractProfileFromMatrices(tables);detail=`${data2b.length} docs (CSV)`;
       }
     }
-    applyGstr2bProfile(profile);$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${detail}\n${profileInfoText()}`;
+    profile=enrichProfileFromFilename(profile,file.name);prepareGstrMapper(tabularSheets,profile,file.name);applyGstr2bProfile(profile);$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${detail}\n${profileInfoText()}`;
     if(!data2b.length)showAlert("GSTR-2B empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();
-  }catch(e){data2b=[];gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};showAlert("2B error: "+e.message,"err");setProgress(0);updateReady();}
+  }catch(e){data2b=[];gstrImportState=null;$("#gstrMapPanel").classList.remove("show","open");gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};showAlert("2B error: "+e.message,"err");setProgress(0);updateReady();}
 }
 async function load2aFile(file){name2a=file.name;setProgress(20);try{const ext=extOf(file.name);if(["xlsx","xls","xlsm"].includes(ext)){const{invoices,sheetStats}=loadPortalFromWorkbook(await readWorkbookFromFile(file),"2a");data2a=invoices;$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (Excel)${sheetStats.length?"\n"+sheetStats.join(" | "):""}`;}else if(ext==="json"){data2a=walkPortalJson(JSON.parse(await file.text()),"2a");$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (JSON)`;}else{const text=await file.text();try{data2a=walkPortalJson(JSON.parse(text),"2a");}catch{data2a=parseCSV(text).map(r=>rowToInvoice(r,"2a","b2b")).filter(Boolean);}$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs`;}if(!data2a.length)showAlert("GSTR-2A empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();}catch(e){showAlert("2A error: "+e.message,"err");setProgress(0);}}
 function runRecon(){
-  setProgress(30);const opts={tolerance:Number($("#tolerance").value)||1,dateTol:Number($("#dateTol").value)||0,enableProbable:$("#optProbable").checked,strength:$("#matchStrength").value,includeCN:$("#optCreditNotes").checked,mode,zeroInelig:$("#optIneligible").checked};
-  lastResults=reconcileAll(booksData,data2b,data2a,opts);setProgress(70);lastSummary=buildSummary(lastResults,opts);filterStatus="ALL";render();setProgress(100);
-  const linked=lastResults.filter(r=>r.books&&(r.portal2b||r.portal2a)).length,minRows=Math.min(booksData.length||Infinity,(data2b.length||data2a.length)||Infinity),ratio=Number.isFinite(minRows)&&minRows?linked/minRows:0;
-  if(linked===0&&minRows>=10)showAlert(`0 invoices matched out of Books ${booksData.length} and GSTR-2B ${data2b.length}. Files may be reversed or GSTIN/Invoice columns are mapped incorrectly. Upload boxes and Universal Mapping check karein.`,"err");
-  else if(ratio<0.1&&minRows>=20)showAlert(`Warning: sirf ${linked} invoices matched. File role, GSTIN and Invoice No mapping verify karein.`,"err");
-  else showAlert(`Done · ${linked} linked invoices · Can claim now ${fmt(lastSummary.amounts.claimable_itc)} · Cannot claim yet ${fmt(lastSummary.amounts.hold_itc)}`,"ok");
+  setProgress(30);syncPeriodValue();const opts={tolerance:Number($("#tolerance").value)||1,dateTol:Number($("#dateTol").value)||0,enableProbable:$("#optProbable").checked,strength:$("#matchStrength").value,includeCN:$("#optCreditNotes").checked,mode,zeroInelig:$("#optIneligible").checked};
+  const months=selectedPeriodMonths(),booksScope=filterInvoicesByPeriod(booksData,months),g2bScope=filterInvoicesByPeriod(data2b,months),g2aScope=filterInvoicesByPeriod(data2a,months);
+  lastResults=reconcileAll(booksScope,g2bScope,g2aScope,opts);setProgress(70);lastSummary=buildSummary(lastResults,opts);filterStatus="ALL";render();setProgress(100);
+  const linked=lastResults.filter(r=>r.books&&(r.portal2b||r.portal2a)).length,minRows=Math.min(booksScope.length||Infinity,(g2bScope.length||g2aScope.length)||Infinity),ratio=Number.isFinite(minRows)&&minRows?linked/minRows:0,scopeText=$("#period").value?` · ${$("#period").value}`:"";
+  if(linked===0&&minRows>=10)showAlert(`0 invoices matched out of Books ${booksScope.length} and GSTR-2B ${g2bScope.length}${scopeText}. Files may be reversed or GSTIN/Invoice columns are mapped incorrectly.`,"err");
+  else if(ratio<0.1&&minRows>=20)showAlert(`Warning: sirf ${linked} invoices matched${scopeText}. File role, GSTIN and Invoice No mapping verify karein.`,"err");
+  else showAlert(`Done${scopeText} · ${linked} linked · Only Books invoices ${lastSummary.counts.ONLY_IN_BOOKS||0} · Books notes ${lastSummary.counts.BOOKS_NOTE_NOT_IN_B2B||0} · Only 2B ${lastSummary.counts.ONLY_IN_2B||0}`,"ok");
   $("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;
 }
 function render(){
   $("#results").classList.remove("hidden");const a=lastSummary.amounts,c=lastSummary.counts;
   $("#kClaim").textContent=fmt(a.claimable_itc);$("#kHold").textContent=fmt(a.hold_itc);$("#k2aOnly").textContent=fmt(a.pending_2b_itc);$("#kInv").textContent=fmt(a.investigate_itc);$("#kCount").textContent=String(lastSummary.total);
   $("#kSplit").textContent=`Matched ${(c.MATCHED||0)+(c.MATCHED_2B||0)+(c.MATCHED_ALL||0)} · Pending ${c.ONLY_IN_BOOKS||0} · 2A≠2B ${c.IN_2A_NOT_2B||0}`;$("#genAt").textContent="Generated: "+lastSummary.generated_at;
-  const matrixGroups=[{key:"MATCHED_ALL",label:"Books + 2A + 2B",act:"Can claim now"},{key:"MATCHED_2B",label:"Books + 2B",act:"Can claim now"},{key:"MATCHED",label:"Matched (mode)",act:"Can claim / review"},{key:"DATE_MISMATCH",label:"Date mismatch",act:"Check invoice date"},{key:"INVOICE_MISMATCH",label:"Invoice number difference",act:"Verify / correct invoice no"},{key:"GSTIN_MISMATCH",label:"GSTIN difference",act:"Correct party ledger GSTIN"},{key:"IN_2A_NOT_2B",label:"Books + 2A, not 2B",act:"Cannot claim yet"},{key:"VALUE_MISMATCH",label:"Value mismatch",act:"Check & fix"},{key:"TAX_MISMATCH",label:"Tax mismatch",act:"Check & fix"},{key:"PROBABLE_MATCH",label:"Probable match",act:"Check manually"},{key:"ONLY_IN_BOOKS",label:"Only in Books",act:"Cannot claim yet — ask supplier"},{key:"ONLY_IN_2B",label:"Only in 2B",act:"Add in books / check"},{key:"ONLY_IN_2A",label:"Only in 2A",act:"Track / add in books"}];
+  const matrixGroups=[{key:"MATCHED_ALL",label:"Books + 2A + 2B",act:"Can claim now"},{key:"MATCHED_2B",label:"Books + 2B",act:"Can claim now"},{key:"MATCHED",label:"Matched (mode)",act:"Can claim / review"},{key:"DATE_MISMATCH",label:"Date mismatch",act:"Check invoice date"},{key:"INVOICE_MISMATCH",label:"Invoice number difference",act:"Verify / correct invoice no"},{key:"GSTIN_MISMATCH",label:"GSTIN difference",act:"Correct party ledger GSTIN"},{key:"IN_2A_NOT_2B",label:"Books + 2A, not 2B",act:"Cannot claim yet"},{key:"VALUE_MISMATCH",label:"Value mismatch",act:"Check & fix"},{key:"TAX_MISMATCH",label:"Tax mismatch",act:"Check & fix"},{key:"PROBABLE_MATCH",label:"Probable match",act:"Check manually"},{key:"ONLY_IN_BOOKS",label:"Only in Books",act:"Cannot claim yet — ask supplier"},{key:"BOOKS_NOTE_NOT_IN_B2B",label:"Books Debit/Credit Notes",act:"Upload GSTR CDNR for note matching"},{key:"ONLY_IN_2B",label:"Only in 2B",act:"Add in books / check"},{key:"ONLY_IN_2A",label:"Only in 2A",act:"Track / add in books"}];
   const mb=$("#matrixBody");mb.innerHTML="";for(const g of matrixGroups){const rows=lastResults.filter(r=>r.status===g.key);if(!rows.length)continue;let taxable=0,tax=0;for(const r of rows){const inv=r.books||r.portal2b||r.portal2a;if(inv){taxable+=inv.taxable_value;tax+=inv.total_tax;}}const tr=document.createElement("tr");tr.innerHTML=`<td style="color:#0f172a!important">${esc(g.label)}</td><td style="color:#0f172a!important">${rows.length}</td><td class="money" style="color:#0f172a!important">${fmt(taxable)}</td><td class="money" style="color:#0f172a!important">${fmt(tax)}</td><td style="color:#0f172a!important">${esc(g.act)}</td>`;mb.appendChild(tr);}
   const matched=(c.MATCHED||0)+(c.MATCHED_2B||0)+(c.MATCHED_ALL||0)+(c.DATE_MISMATCH||0),total=lastSummary.total||1;
-  $("#qualityBody").innerHTML=[["Exact / clean match",matched,"Can claim (subject to Sec 16)"],["Needs attention",(c.VALUE_MISMATCH||0)+(c.TAX_MISMATCH||0)+(c.PROBABLE_MATCH||0)+(c.INVOICE_MISMATCH||0)+(c.GSTIN_MISMATCH||0)+(c.IN_2A_NOT_2B||0),"Fix before claim"],["Only in books",c.ONLY_IN_BOOKS||0,"Cannot claim yet — ask supplier"],["Only on portal",(c.ONLY_IN_2B||0)+(c.ONLY_IN_2A||0),"Missing in books"]].map(([n,cnt,note])=>`<tr><td>${n}</td><td>${cnt}</td><td>${((cnt/total)*100).toFixed(1)}%</td><td style="color:#0f172a!important;font-weight:500">${note}</td></tr>`).join("");
+  $("#qualityBody").innerHTML=[["Exact / clean match",matched,"Can claim (subject to Sec 16)"],["Needs attention",(c.VALUE_MISMATCH||0)+(c.TAX_MISMATCH||0)+(c.PROBABLE_MATCH||0)+(c.INVOICE_MISMATCH||0)+(c.GSTIN_MISMATCH||0)+(c.IN_2A_NOT_2B||0),"Fix before claim"],["Only in books",c.ONLY_IN_BOOKS||0,"Purchase invoices missing in 2B"],["Books notes",c.BOOKS_NOTE_NOT_IN_B2B||0,"Upload CDNR for Debit/Credit notes"],["Only on portal",(c.ONLY_IN_2B||0)+(c.ONLY_IN_2A||0),"Missing in books"]].map(([n,cnt,note])=>`<tr><td>${n}</td><td>${cnt}</td><td>${((cnt/total)*100).toFixed(1)}%</td><td style="color:#0f172a!important;font-weight:500">${note}</td></tr>`).join("");
   const pills=$("#pills");pills.innerHTML="";for(const s of["ALL",...Object.keys(c).sort()]){const el=document.createElement("span");el.className="pill"+(filterStatus===s?" on":"");el.textContent=`${s} (${s==="ALL"?lastResults.length:(c[s]||0)})`;el.onclick=()=>{filterStatus=s;render();};pills.appendChild(el);}
   const q=($("#search").value||"").toLowerCase().trim(),vt=$("#filterSoft").value,tb=$("#tbody");tb.innerHTML="";
   for(const r of lastResults){if(filterStatus!=="ALL"&&r.status!==filterStatus)continue;const row=toRow(r);if(vt&&row.voucher_type!==vt)continue;if(q&&!Object.values(row).join(" ").toLowerCase().includes(q))continue;const tr=document.createElement("tr");const diff=row.taxable_diff,dcls=(diff===""||diff===0)?"diff-ok":"diff-bad";tr.innerHTML=`<td style="color:#0f172a!important"><span class="tag ${row.status}">${row.status}</span></td><td style="color:#0f172a!important"><div class="src-dots"><span class="src-dot b ${row.has_books?"on":"off"}">B</span><span class="src-dot a ${row.has_2a?"on":"off"}">A</span><span class="src-dot t ${row.has_2b?"on":"off"}">2B</span></div></td><td style="color:#0f172a!important">${esc(row.gstin)}</td><td style="color:#0f172a!important">${esc(row.party_name)}</td><td style="color:#0f172a!important">${esc(row.invoice_no_books)}</td><td style="color:#0f172a!important">${esc(row.invoice_no_2b)}</td><td style="color:#0f172a!important">${esc(row.invoice_no_2a)}</td><td style="color:#0f172a!important">${esc(row.invoice_date)}</td><td class="money" style="color:#0f172a!important">${row.taxable_books===""?"—":fmt(row.taxable_books)}</td><td class="money" style="color:#0f172a!important">${row.taxable_2b===""?"—":fmt(row.taxable_2b)}</td><td class="money" style="color:#0f172a!important">${row.taxable_2a===""?"—":fmt(row.taxable_2a)}</td><td class="money ${dcls}" style="color:${dcls==="diff-bad"?"#b91c1c":"#0f172a"}!important">${diff===""?"—":fmt(diff)}</td><td class="money" style="color:#0f172a!important">${row.total_tax_books===""?"—":fmt(row.total_tax_books)}</td><td class="money" style="color:#0f172a!important">${row.total_tax_2b===""?"—":fmt(row.total_tax_2b)}</td><td style="max-width:210px;color:#e5e7eb!important;font-size:.72rem">${esc(row.action)}</td>`;tb.appendChild(tr);}
@@ -1576,8 +1688,8 @@ function downloadBlob(filename,blob){const a=document.createElement("a");a.href=
 function downloadText(filename,text,mime="text/plain"){downloadBlob(filename,new Blob([text],{type:mime}));}
 function exportCsv(){if(!maybeConfirmExport("Detail CSV"))return;const rows=lastResults.map(toRow);if(!rows.length)return;const keys=Object.keys(rows[0]),lines=[keys.join(",")];for(const r of rows)lines.push(keys.map(k=>{let v=r[k];if(v===null||v===undefined)v="";v=String(v);if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';return v;}).join(","));downloadText(exportFileName("Recon","csv"),(settings.exportBom!==false?"\uFEFF":"")+lines.join("\n"),"text/csv");}
 function exportJson(){if(!maybeConfirmExport("JSON pack"))return;downloadText(exportFileName("Pack","json"),JSON.stringify({meta:{product:"GST Nexus",version:"2.1",mode,company:$("#company").value,gstin:$("#gstin").value,period:$("#period").value,theme:settings.theme},summary:lastSummary,results:lastResults.map(toRow)},null,2),"application/json");}
-function exportFollowup(){if(!maybeConfirmExport("Supplier follow-up"))return;const lines=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"].join(",")];for(const r of lastResults){if(!["ONLY_IN_BOOKS","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r),inv=row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,taxable=row.taxable_books||row.taxable_2b||0,tax=row.total_tax_books||row.total_tax_2b||0;const msg=r.status==="ONLY_IN_BOOKS"?`Invoice ${inv} not in GSTR-2B — please file GSTR-1`:`Please verify invoice ${inv}. ${r.remarks||""}`;lines.push([row.gstin,row.party_name,inv,row.invoice_date,taxable,tax,r.status,msg].map(v=>{v=String(v??"");if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';return v;}).join(","));}downloadText(exportFileName("Supplier_Followup","csv"),(settings.exportBom!==false?"\uFEFF":"")+lines.join("\n"),"text/csv");}
-function exportAuditExcel(){if(!maybeConfirmExport("Audit Excel"))return;ensureXLSX();const rows=lastResults.map(toRow),wb=XLSX.utils.book_new();const dash=[["GST NEXUS — Audit Pack"],["Generated",lastSummary.generated_at],["Mode",mode],["Company",$("#company").value],["GSTIN",$("#gstin").value],["Period",$("#period").value],[],["Can claim now",lastSummary.amounts.claimable_itc],["Cannot claim yet",lastSummary.amounts.hold_itc],["In 2A not 2B",lastSummary.amounts.pending_2b_itc],["Only on portal",lastSummary.amounts.investigate_itc],[],["Status","Count"]];for(const[s,c]of Object.entries(lastSummary.counts))dash.push([s,c]);dash.push([],["Copyright © Chirag Kachhad 2026 · @digigoindia"]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dash),"01_Dashboard");const headers=["Status","Action","GSTIN","GSTIN Books","GSTIN 2B","Party","Books","2A","2B","Inv Books","Inv 2B","Inv 2A","Date","Taxable Books","Taxable 2B","Taxable 2A","Diff","Tax Books","Tax 2B","Tax 2A","Voucher","RCM","Remarks"];const keys=["status","action","gstin","gstin_books","gstin_2b","party_name","has_books","has_2a","has_2b","invoice_no_books","invoice_no_2b","invoice_no_2a","invoice_date","taxable_books","taxable_2b","taxable_2a","taxable_diff","total_tax_books","total_tax_2b","total_tax_2a","voucher_type","rcm","remarks"];function addSheet(name,list){const aoa=[headers];for(const r of list)aoa.push(keys.map(k=>{const v=r[k];return typeof v==="boolean"?(v?"Y":"N"):v;}));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),name.slice(0,31));}addSheet("02_All_Results",rows);addSheet("03_Can_Claim_Now",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)));addSheet("04_Cannot_Claim_Yet",rows.filter(r=>["ONLY_IN_BOOKS","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH","DUPLICATE_BOOKS"].includes(r.status)));addSheet("05_Portal_Only",rows.filter(r=>["ONLY_IN_2B","ONLY_IN_2A","DUPLICATE_PORTAL"].includes(r.status)));addSheet("06_Fully_Matched",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL"].includes(r.status)));addSheet("07_Invoice_No_Diff",rows.filter(r=>r.status==="INVOICE_MISMATCH"));addSheet("08_GSTIN_Diff",rows.filter(r=>r.status==="GSTIN_MISMATCH"));addSheet("09_Date_Diff",rows.filter(r=>r.status==="DATE_MISMATCH"));addSheet("10_Value_Tax_Diff",rows.filter(r=>["VALUE_MISMATCH","TAX_MISMATCH"].includes(r.status)));addSheet("11_Only_in_Books",rows.filter(r=>r.status==="ONLY_IN_BOOKS"));addSheet("12_Only_in_GSTR2B",rows.filter(r=>r.status==="ONLY_IN_2B"));if(settings.exportScore!==false){const sup=[["GSTIN","Party","Matched","Pending","2A not 2B","Portal only","Can claim now","Cannot claim yet","Risk"]];for(const[g,s]of Object.entries(lastSummary.supplier_summary)){let risk="Low";if(s.hold_itc>0&&s.hold>=2)risk="High";else if(s.hold_itc>0||s.a_not_b>0)risk="Medium";sup.push([g,s.party_name,s.matched,s.hold,s.a_not_b,s.portal_only,s.claimable_itc,s.hold_itc,risk]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sup),"13_Supplier_Scorecard");}if(settings.exportFollow!==false){const fu=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"]];for(const r of lastResults){if(!["ONLY_IN_BOOKS","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r);fu.push([row.gstin,row.party_name,row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,row.invoice_date,row.taxable_books||row.taxable_2b||0,row.total_tax_books||row.total_tax_2b||0,r.status,r.action]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fu),"14_Supplier_Followup");}if(settings.exportMethod!==false)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Methodology"],["Match key = GSTIN + normalized Invoice No"],["Can claim now = in GSTR-2B + books"],["Cannot claim yet = only books / 2A not 2B / mismatch"],["Copyright © Chirag Kachhad 2026 · @digigoindia"]]),"15_Methodology");XLSX.writeFile(wb,exportFileName("AUDIT","xlsx"));}
+function exportFollowup(){if(!maybeConfirmExport("Supplier follow-up"))return;const lines=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"].join(",")];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r),inv=row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,taxable=row.taxable_books||row.taxable_2b||0,tax=row.total_tax_books||row.total_tax_2b||0;const msg=r.status==="ONLY_IN_BOOKS"?`Invoice ${inv} not in GSTR-2B — please file GSTR-1`:`Please verify invoice ${inv}. ${r.remarks||""}`;lines.push([row.gstin,row.party_name,inv,row.invoice_date,taxable,tax,r.status,msg].map(v=>{v=String(v??"");if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';return v;}).join(","));}downloadText(exportFileName("Supplier_Followup","csv"),(settings.exportBom!==false?"\uFEFF":"")+lines.join("\n"),"text/csv");}
+function exportAuditExcel(){if(!maybeConfirmExport("Audit Excel"))return;ensureXLSX();const rows=lastResults.map(toRow),wb=XLSX.utils.book_new();const dash=[["GST NEXUS — Audit Pack"],["Generated",lastSummary.generated_at],["Mode",mode],["Company",$("#company").value],["GSTIN",$("#gstin").value],["Period",$("#period").value],[],["Can claim now",lastSummary.amounts.claimable_itc],["Cannot claim yet",lastSummary.amounts.hold_itc],["In 2A not 2B",lastSummary.amounts.pending_2b_itc],["Only on portal",lastSummary.amounts.investigate_itc],[],["Status","Count"]];for(const[s,c]of Object.entries(lastSummary.counts))dash.push([s,c]);dash.push([],["Copyright © Chirag Kachhad 2026 · @digigoindia"]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dash),"01_Dashboard");const headers=["Status","Action","GSTIN","GSTIN Books","GSTIN 2B","Party","Books","2A","2B","Inv Books","Inv 2B","Inv 2A","Date","Taxable Books","Taxable 2B","Taxable 2A","Diff","Tax Books","Tax 2B","Tax 2A","Voucher","RCM","Remarks"];const keys=["status","action","gstin","gstin_books","gstin_2b","party_name","has_books","has_2a","has_2b","invoice_no_books","invoice_no_2b","invoice_no_2a","invoice_date","taxable_books","taxable_2b","taxable_2a","taxable_diff","total_tax_books","total_tax_2b","total_tax_2a","voucher_type","rcm","remarks"];function addSheet(name,list){const aoa=[headers];for(const r of list)aoa.push(keys.map(k=>{const v=r[k];return typeof v==="boolean"?(v?"Y":"N"):v;}));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),name.slice(0,31));}addSheet("02_All_Results",rows);addSheet("03_Can_Claim_Now",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)));addSheet("04_Cannot_Claim_Yet",rows.filter(r=>["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH","DUPLICATE_BOOKS"].includes(r.status)));addSheet("05_Portal_Only",rows.filter(r=>["ONLY_IN_2B","ONLY_IN_2A","DUPLICATE_PORTAL"].includes(r.status)));addSheet("06_Fully_Matched",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL"].includes(r.status)));addSheet("07_Invoice_No_Diff",rows.filter(r=>r.status==="INVOICE_MISMATCH"));addSheet("08_GSTIN_Diff",rows.filter(r=>r.status==="GSTIN_MISMATCH"));addSheet("09_Date_Diff",rows.filter(r=>r.status==="DATE_MISMATCH"));addSheet("10_Value_Tax_Diff",rows.filter(r=>["VALUE_MISMATCH","TAX_MISMATCH"].includes(r.status)));addSheet("11_Only_in_Books",rows.filter(r=>r.status==="ONLY_IN_BOOKS"));addSheet("12_Books_Notes",rows.filter(r=>r.status==="BOOKS_NOTE_NOT_IN_B2B"));addSheet("13_Only_in_GSTR2B",rows.filter(r=>r.status==="ONLY_IN_2B"));if(settings.exportScore!==false){const sup=[["GSTIN","Party","Matched","Pending","2A not 2B","Portal only","Can claim now","Cannot claim yet","Risk"]];for(const[g,s]of Object.entries(lastSummary.supplier_summary)){let risk="Low";if(s.hold_itc>0&&s.hold>=2)risk="High";else if(s.hold_itc>0||s.a_not_b>0)risk="Medium";sup.push([g,s.party_name,s.matched,s.hold,s.a_not_b,s.portal_only,s.claimable_itc,s.hold_itc,risk]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sup),"14_Supplier_Scorecard");}if(settings.exportFollow!==false){const fu=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"]];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r);fu.push([row.gstin,row.party_name,row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,row.invoice_date,row.taxable_books||row.taxable_2b||0,row.total_tax_books||row.total_tax_2b||0,r.status,r.action]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fu),"15_Supplier_Followup");}if(settings.exportMethod!==false)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Methodology"],["Match key = GSTIN + normalized Invoice No"],["Can claim now = in GSTR-2B + books"],["Cannot claim yet = only books / 2A not 2B / mismatch"],["Copyright © Chirag Kachhad 2026 · @digigoindia"]]),"16_Methodology");XLSX.writeFile(wb,exportFileName("AUDIT","xlsx"));}
 const SAMPLE_BOOKS=`Supplier GSTIN,Party Name,Invoice No,Invoice Date,Taxable Value,IGST,CGST,SGST,Cess,Invoice Value,Place of Supply,Voucher Type,RCM
 24AABCT1332L1ZZ,Acme Traders Pvt Ltd,INV-2026-001,05-04-2026,100000.00,0.00,9000.00,9000.00,0.00,118000.00,24-Gujarat,Purchase,N
 24AABCT1332L1ZZ,Acme Traders Pvt Ltd,INV-2026-002,08-04-2026,50000.00,0.00,4500.00,4500.00,0.00,59000.00,24-Gujarat,Purchase,N
@@ -1607,6 +1719,11 @@ $("#btnAutoMap").onclick=()=>{if(booksImportState)renderBooksMapper(true);};
 $("#btnApplyMap").onclick=()=>applyBooksMapping(true);
 $("#optAggregateBooks").addEventListener("change",()=>{if(booksImportState)applyBooksMapping(false);});
 $("#softPreset").addEventListener("change",()=>{if(booksImportState)prepareBooksImporter(booksImportState.sheets);});
+$("#gstrMapToggle").onclick=()=>{const panel=$("#gstrMapPanel"),open=panel.classList.toggle("open");$("#gstrMapToggle").setAttribute("aria-expanded",String(open));};
+$("#gstrMapSheet").addEventListener("change",e=>{if(!gstrImportState)return;gstrImportState.sheetIndex=Number(e.target.value)||0;renderGstrMapper(true);});
+$("#gstrHeaderRow").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.headerIdxBySheet[si]=Math.max(0,(Number(e.target.value)||1)-1);renderGstrMapper(false);});
+$("#gstrHeaderSpan").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.spanBySheet[si]=e.target.value||"auto";renderGstrMapper(false);});
+$("#btnGstrAutoMap").onclick=()=>{if(gstrImportState)renderGstrMapper(true);};$("#btnApplyGstrMap").onclick=applyGstrMapping;
 $("#btnRun").onclick=runRecon;$("#btnSample").onclick=loadSample;$("#btnExportCsv").onclick=exportCsv;$("#btnExportJson").onclick=exportJson;$("#btnExportExcel").onclick=exportAuditExcel;$("#btnExportFollow").onclick=exportFollowup;
 $("#search").addEventListener("input",()=>{if(lastResults.length)render();});$("#filterSoft").addEventListener("change",()=>{if(lastResults.length)render();});
 $("#btnSettings").onclick=openSettings;$("#spClose").onclick=closeSettings;$("#spOverlay").onclick=closeSettings;
@@ -1622,5 +1739,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c783042972471f',t:'MTc4NDI3MzExNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c7b869ee1dff9d',t:'MTc4NDI3NTMwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
