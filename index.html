@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="pearl">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -474,7 +474,7 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
     <div class="sp-section">
       <h5>World-class themes</h5>
       <div class="theme-grid" id="themeGrid">
-        <button type="button" class="theme-card active" data-theme="nexus">
+        <button type="button" class="theme-card" data-theme="nexus">
           <div class="theme-preview tp-nexus"><span></span></div>
           <b>Nexus Cyan</b>
           <small>Default pro · neon audit</small>
@@ -494,7 +494,7 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
           <b>Royal Gold</b>
           <small>Premium CA · dark gold</small>
         </button>
-        <button type="button" class="theme-card" data-theme="pearl" style="grid-column:1/-1">
+        <button type="button" class="theme-card active" data-theme="pearl" style="grid-column:1/-1">
           <div class="theme-preview tp-pearl"><span></span></div>
           <b>Pearl Light</b>
           <small>Daylight office · print-friendly soft UI</small>
@@ -884,13 +884,13 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 </div>
 
 <footer>
-  GST Nexus v2.4 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
+  GST Nexus v2.5 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
   Copyright © Chirag Kachhad 2026 · @digigoindia
 </footer>
 
 <script>
-/* GST Nexus v2.4 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
-/* GST NEXUS v2.4 engine p1 — utils + parse */
+/* GST Nexus v2.5 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
+/* GST NEXUS v2.5 engine p1 — utils + parse */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const fmt = n => {
@@ -1241,7 +1241,7 @@ function profileInfoText(){
   if(!gstr2bProfile.companyName&&!gstr2bProfile.gstin)parts.push("Recipient company/GSTIN metadata file me available nahi hai — manual entry required");return parts.join("\n");
 }
 
-/* GST NEXUS v2.4 engine p2 — recon + summary + UI + init */
+/* GST NEXUS v2.5 engine p2 — recon + summary + UI + init */
 const ACTION={
   MATCHED_ALL:"In books + 2A + 2B — can claim now (other GST rules still apply)",
   MATCHED_2B:"In books + GSTR-2B — can claim now in GSTR-3B",
@@ -1408,16 +1408,16 @@ function buildSummary(results,opts={}){
 }
 function toRow(r){const b=r.books,t=r.portal2b,a=r.portal2a;let diff="";if(b&&t)diff=+(b.taxable_value-t.taxable_value).toFixed(2);else if(b&&a)diff=+(b.taxable_value-a.taxable_value).toFixed(2);return{status:r.status,action:r.action,remarks:r.remarks,gstin:(b&&t&&b.gstin!==t.gstin)?`${b.gstin} → ${t.gstin}`:(r.gstin||""),gstin_books:b?.gstin||"",gstin_2b:t?.gstin||"",party_name:r.party_name||"",has_books:!!b,has_2b:!!t,has_2a:!!a,invoice_no_books:b?.invoice_no||"",invoice_no_2b:t?.invoice_no||"",invoice_no_2a:a?.invoice_no||"",invoice_date:(b?.invoice_date)||(t?.invoice_date)||(a?.invoice_date)||"",taxable_books:b?b.taxable_value:"",taxable_2b:t?t.taxable_value:"",taxable_2a:a?a.taxable_value:"",taxable_diff:diff,total_tax_books:b?b.total_tax:"",total_tax_2b:t?t.total_tax:"",total_tax_2a:a?a.total_tax:"",voucher_type:(b||t||a)?.voucher_type||"",rcm:(b||t||a)?.rcm||""};}
 let mode="2b",booksData=[],data2b=[],data2a=[],booksName="",name2b="",name2a="",lastResults=[],lastSummary=null,filterStatus="ALL",booksImportState=null;
-const SETTINGS_KEY="gst_nexus_settings_v2";
-const DEFAULT_SETTINGS={theme:"nexus",density:"comfortable",fontScale:1,compactTable:false,hideActions:false,reduceMotion:false,stickyHeader:true,defaultMode:"2b",defaultSoft:"auto",defTol:1,defDateTol:0,defStrength:"smart",defProbable:true,defIgnoreFY:true,defRcm:true,defCN:true,defInelig:false,autoRun:false,defCompany:"",defGstin:"",defPeriod:"",exportMethod:true,exportFollow:true,exportScore:true,exportBom:true,confirmExport:false,exportPrefix:"GST_Nexus"};
+const SETTINGS_KEY="gst_nexus_settings_v3";
+const DEFAULT_SETTINGS={theme:"pearl",density:"comfortable",fontScale:1,compactTable:false,hideActions:false,reduceMotion:false,stickyHeader:true,defaultMode:"2b",defaultSoft:"auto",defTol:1,defDateTol:0,defStrength:"smart",defProbable:true,defIgnoreFY:true,defRcm:true,defCN:true,defInelig:false,autoRun:false,defCompany:"",defGstin:"",defPeriod:"",exportMethod:true,exportFollow:true,exportScore:true,exportBom:true,confirmExport:false,exportPrefix:"GST_Nexus"};
 let settings={...DEFAULT_SETTINGS};
 function loadSettings(){try{const raw=localStorage.getItem(SETTINGS_KEY);if(raw)settings={...DEFAULT_SETTINGS,...JSON.parse(raw)};}catch(e){settings={...DEFAULT_SETTINGS};}}
 function saveSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(e){}}
-function applyTheme(theme){settings.theme=theme||settings.theme||"nexus";document.documentElement.setAttribute("data-theme",settings.theme);$$("#themeGrid .theme-card").forEach(c=>c.classList.toggle("active",c.dataset.theme===settings.theme));}
+function applyTheme(theme){settings.theme=theme||settings.theme||"pearl";document.documentElement.setAttribute("data-theme",settings.theme);$$("#themeGrid .theme-card").forEach(c=>c.classList.toggle("active",c.dataset.theme===settings.theme));}
 function applyDensity(d){settings.density=d||settings.density||"comfortable";document.body.classList.remove("density-compact","density-comfortable","density-spacious");document.body.classList.add("density-"+settings.density);$$("#densitySeg button").forEach(b=>b.classList.toggle("active",b.dataset.density===settings.density));}
 function applyDisplayPrefs(){document.documentElement.style.setProperty("--font-scale",String(settings.fontScale||1));const fs=$("#fontScaleVal");if(fs)fs.textContent=Math.round((settings.fontScale||1)*100)+"%";const range=$("#setFontScale");if(range)range.value=settings.fontScale||1;document.body.classList.toggle("compact-table",!!settings.compactTable);document.body.classList.toggle("hide-actions-col",!!settings.hideActions);document.body.classList.toggle("reduce-motion",!!settings.reduceMotion);const header=document.querySelector("header");if(header)header.style.position=settings.stickyHeader===false?"relative":"sticky";}
 function fillSettingsPanel(){applyTheme(settings.theme);applyDensity(settings.density);applyDisplayPrefs();const set=(id,val,type="value")=>{const el=$(id);if(!el)return;if(type==="checked")el.checked=!!val;else el.value=val;};set("#setCompactTable",settings.compactTable,"checked");set("#setHideActions",settings.hideActions,"checked");set("#setReduceMotion",settings.reduceMotion,"checked");set("#setStickyHeader",settings.stickyHeader!==false,"checked");set("#setDefaultMode",settings.defaultMode||"2b");set("#setDefaultSoft",settings.defaultSoft||"auto");set("#setDefTol",settings.defTol??1);set("#setDefDateTol",settings.defDateTol??0);set("#setDefStrength",settings.defStrength||"smart");set("#setDefProbable",settings.defProbable!==false,"checked");set("#setDefIgnoreFY",settings.defIgnoreFY!==false,"checked");set("#setDefRcm",settings.defRcm!==false,"checked");set("#setDefCN",settings.defCN!==false,"checked");set("#setDefInelig",!!settings.defInelig,"checked");set("#setAutoRun",!!settings.autoRun,"checked");set("#setDefCompany",settings.defCompany||"");set("#setDefGstin",settings.defGstin||"");set("#setDefPeriod",settings.defPeriod||"");set("#setExportMethod",settings.exportMethod!==false,"checked");set("#setExportFollow",settings.exportFollow!==false,"checked");set("#setExportScore",settings.exportScore!==false,"checked");set("#setExportBom",settings.exportBom!==false,"checked");set("#setConfirmExport",!!settings.confirmExport,"checked");set("#setExportPrefix",settings.exportPrefix||"GST_Nexus");}
-function readSettingsFromPanel(){settings.theme=document.documentElement.getAttribute("data-theme")||"nexus";settings.density=($$("#densitySeg button.active")[0]?.dataset.density)||"comfortable";settings.fontScale=Number($("#setFontScale")?.value)||1;settings.compactTable=!!$("#setCompactTable")?.checked;settings.hideActions=!!$("#setHideActions")?.checked;settings.reduceMotion=!!$("#setReduceMotion")?.checked;settings.stickyHeader=!!$("#setStickyHeader")?.checked;settings.defaultMode=$("#setDefaultMode")?.value||"2b";settings.defaultSoft=$("#setDefaultSoft")?.value||"auto";settings.defTol=Number($("#setDefTol")?.value)||0;settings.defDateTol=Number($("#setDefDateTol")?.value)||0;settings.defStrength=$("#setDefStrength")?.value||"smart";settings.defProbable=!!$("#setDefProbable")?.checked;settings.defIgnoreFY=!!$("#setDefIgnoreFY")?.checked;settings.defRcm=!!$("#setDefRcm")?.checked;settings.defCN=!!$("#setDefCN")?.checked;settings.defInelig=!!$("#setDefInelig")?.checked;settings.autoRun=!!$("#setAutoRun")?.checked;settings.defCompany=$("#setDefCompany")?.value||"";settings.defGstin=$("#setDefGstin")?.value||"";settings.defPeriod=$("#setDefPeriod")?.value||"";settings.exportMethod=!!$("#setExportMethod")?.checked;settings.exportFollow=!!$("#setExportFollow")?.checked;settings.exportScore=!!$("#setExportScore")?.checked;settings.exportBom=!!$("#setExportBom")?.checked;settings.confirmExport=!!$("#setConfirmExport")?.checked;settings.exportPrefix=($("#setExportPrefix")?.value||"GST_Nexus").trim()||"GST_Nexus";}
+function readSettingsFromPanel(){settings.theme=document.documentElement.getAttribute("data-theme")||"pearl";settings.density=($$("#densitySeg button.active")[0]?.dataset.density)||"comfortable";settings.fontScale=Number($("#setFontScale")?.value)||1;settings.compactTable=!!$("#setCompactTable")?.checked;settings.hideActions=!!$("#setHideActions")?.checked;settings.reduceMotion=!!$("#setReduceMotion")?.checked;settings.stickyHeader=!!$("#setStickyHeader")?.checked;settings.defaultMode=$("#setDefaultMode")?.value||"2b";settings.defaultSoft=$("#setDefaultSoft")?.value||"auto";settings.defTol=Number($("#setDefTol")?.value)||0;settings.defDateTol=Number($("#setDefDateTol")?.value)||0;settings.defStrength=$("#setDefStrength")?.value||"smart";settings.defProbable=!!$("#setDefProbable")?.checked;settings.defIgnoreFY=!!$("#setDefIgnoreFY")?.checked;settings.defRcm=!!$("#setDefRcm")?.checked;settings.defCN=!!$("#setDefCN")?.checked;settings.defInelig=!!$("#setDefInelig")?.checked;settings.autoRun=!!$("#setAutoRun")?.checked;settings.defCompany=$("#setDefCompany")?.value||"";settings.defGstin=$("#setDefGstin")?.value||"";settings.defPeriod=$("#setDefPeriod")?.value||"";settings.exportMethod=!!$("#setExportMethod")?.checked;settings.exportFollow=!!$("#setExportFollow")?.checked;settings.exportScore=!!$("#setExportScore")?.checked;settings.exportBom=!!$("#setExportBom")?.checked;settings.confirmExport=!!$("#setConfirmExport")?.checked;settings.exportPrefix=($("#setExportPrefix")?.value||"GST_Nexus").trim()||"GST_Nexus";}
 function applySettingsToMainForm(force=false){if(force||!$("#company").value)$("#company").value=settings.defCompany||"";if(force||!$("#gstin").value)$("#gstin").value=settings.defGstin||"";if(force||!$("#period").value)$("#period").value=settings.defPeriod||"";$("#tolerance").value=settings.defTol??1;$("#dateTol").value=settings.defDateTol??0;$("#matchStrength").value=settings.defStrength||"smart";$("#optProbable").checked=settings.defProbable!==false;$("#optIgnoreFY").checked=settings.defIgnoreFY!==false;$("#optRcmSep").checked=settings.defRcm!==false;$("#optCreditNotes").checked=settings.defCN!==false;$("#optIneligible").checked=!!settings.defInelig;if($("#softPreset"))$("#softPreset").value=settings.defaultSoft||"auto";mode=settings.defaultMode||"2b";updateModeUI();}
 function openSettings(){fillSettingsPanel();$("#spOverlay").classList.add("open");$("#spDrawer").classList.add("open");}
 function closeSettings(){$("#spOverlay").classList.remove("open");$("#spDrawer").classList.remove("open");}
@@ -1545,5 +1545,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c712b62d6efcad',t:'MTc4NDI2ODUxNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c725533f21cb6e',t:'MTc4NDI2OTI3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
