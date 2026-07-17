@@ -147,7 +147,7 @@ header{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:v
 .file-ok{display:none;margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--gbg);color:var(--green);font-size:.8rem;white-space:pre-wrap;line-height:1.4}
 .soft-select{margin-top:10px}
 .soft-select label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px}
-select,input[type=text],input[type=number],input[type=search]{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 11px;font-size:.88rem;outline:none}
+select,input[type=text],input[type=number],input[type=search],input[type=month]{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 11px;font-size:.88rem;outline:none}
 select:focus,input:focus{border-color:var(--cyan)}
 
 /* Settings (recon card) */
@@ -746,7 +746,12 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
     <div class="fields">
       <div class="field"><label>Company</label><input type="text" id="company" placeholder="Your Company Pvt Ltd" /></div>
       <div class="field"><label>Your GSTIN</label><input type="text" id="gstin" placeholder="24AAAAA0000A1Z5" maxlength="15" /></div>
-      <div class="field"><label>Period</label><input type="text" id="period" placeholder="Apr-2026" /></div>
+      <div class="field"><label>Period Type</label><select id="periodType"><option value="auto">Auto from GSTR-2B</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></div>
+      <div class="field" id="periodMonthField"><label>Month</label><input type="month" id="periodMonth" /></div>
+      <div class="field hidden" id="periodQuarterField"><label>Quarter</label><select id="periodQuarter"><option value="Q1">Q1 · Apr-Jun</option><option value="Q2">Q2 · Jul-Sep</option><option value="Q3">Q3 · Oct-Dec</option><option value="Q4">Q4 · Jan-Mar</option></select></div>
+      <div class="field" id="periodFYField"><label>Financial Year</label><select id="periodFY"></select></div>
+      <div class="field hidden" id="periodDetectedField"><label>Detected from GSTR-2B</label><input type="text" id="periodDetected" readonly placeholder="Upload GSTR-2B" /></div>
+      <input type="hidden" id="period" value="" />
       <div class="field"><label>Amount tolerance (₹)</label><input type="number" id="tolerance" value="1" min="0" step="0.5" /></div>
       <div class="field"><label>Date tolerance (days)</label><input type="number" id="dateTol" value="0" min="0" step="1" /></div>
       <div class="field"><label>Match strength</label>
@@ -879,13 +884,13 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 </div>
 
 <footer>
-  GST Nexus v2.3 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
+  GST Nexus v2.4 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
   Copyright © Chirag Kachhad 2026 · @digigoindia
 </footer>
 
 <script>
-/* GST Nexus v2.3 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
-/* GST NEXUS v2.3 engine p1 — utils + parse */
+/* GST Nexus v2.4 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
+/* GST NEXUS v2.4 engine p1 — utils + parse */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const fmt = n => {
@@ -958,7 +963,8 @@ const BASE_ALIASES={
   place_of_supply:["place of supply","pos","place_of_supply","state of supply"],
   voucher_type:["voucher type","vch type","voucher_type","type","doc type","document type","note type","invoice type","transaction type"],
   rcm:["rcm","reverse charge","reverse charge applicable","is reverse charge","supply attract reverse charge","rchrg"],
-  itc_eligibility:["itc eligibility","itc","eligibility","itc available","eligible itc","itc availability"]
+  itc_eligibility:["itc eligibility","itc","eligibility","itc available","eligible itc","itc availability"],
+  return_period:["return period","tax period","gstr-1/iff/gstr-5 period","gstr 1 iff gstr 5 period","filing period","rtnprd","fp"]
 };
 const PRESET_EXTRA={tally:{invoice_no:["supplier inv. no.","orig. bill no."],party_name:["party a/c name"]},zoho:{invoice_no:["bill number"],party_name:["vendor name"]},busy:{invoice_no:["bill no."],party_name:["account"]},marg:{invoice_no:["bill no"],party_name:["supplier"]},sap:{invoice_no:["reference","belnr"],party_name:["vendor name"],gstin:["tax number 3","stcd3"]},qb:{invoice_no:["ref no.","num"],party_name:["name","vendor"]},vyapar:{invoice_no:["bill no"],party_name:["party name"]},custom:{},auto:{}};
 function normHeader(h){return String(h||"").trim().toLowerCase().replace(/[₹]/g,"").replace(/\s+/g," ").trim();}
@@ -982,6 +988,7 @@ function smartHeaderScore(canon,h){
     case "voucher_type": return has("invoice","type")||has("document","type")||has("note","type")||n==="vch type"||n==="voucher type"?100:0;
     case "rcm": return has("reverse","charge")||has("supply","attract","reverse","charge")||n==="rcm"?100:0;
     case "itc_eligibility": return has("itc","availability")||has("itc","eligibility")?100:0;
+    case "return_period": return n==="return period"||n==="tax period"||(has("gstr","period")&&!has("date"))||n==="filing period"?100:0;
     case "place_of_supply": return has("place","supply")||n==="pos"?100:0;
     default:return 0;
   }
@@ -1056,7 +1063,7 @@ function rowToInvoice(mapped,source,section=""){
   let itc=String(mapped.itc_eligibility||"Eligible"); const itcl=itc.toLowerCase();
   if(["no","n","ineligible","ineligble"].includes(itcl)) itc="Ineligible"; else if(["yes","y","eligible",""].includes(itcl)) itc="Eligible";
   const ignoreFY=$("#optIgnoreFY")?.checked!==false;
-  return {source,gstin,party_name:String(mapped.party_name||"").trim(),invoice_no:inv,invoice_no_norm:normInv(inv,ignoreFY),invoice_date:parseDate(mapped.invoice_date),taxable_value:taxable,igst,cgst,sgst,cess,reported_total_tax:reportedTax,invoice_value:invVal,place_of_supply:String(mapped.place_of_supply||""),voucher_type:vtype,rcm,itc_eligibility:itc,section,get total_tax(){const split=this.igst+this.cgst+this.sgst+this.cess;return split!==0?split:this.reported_total_tax||0;},get match_key(){return this.gstin+"|"+this.invoice_no_norm;}};
+  return {source,gstin,party_name:String(mapped.party_name||"").trim(),invoice_no:inv,invoice_no_norm:normInv(inv,ignoreFY),invoice_date:parseDate(mapped.invoice_date),taxable_value:taxable,igst,cgst,sgst,cess,reported_total_tax:reportedTax,invoice_value:invVal,return_period:String(mapped.return_period||""),place_of_supply:String(mapped.place_of_supply||""),voucher_type:vtype,rcm,itc_eligibility:itc,section,get total_tax(){const split=this.igst+this.cgst+this.sgst+this.cess;return split!==0?split:this.reported_total_tax||0;},get match_key(){return this.gstin+"|"+this.invoice_no_norm;}};
 }
 function ensureXLSX(){if(typeof XLSX==="undefined") throw new Error("Excel library missing. Internet on rakho (CDN) ya lib/xlsx.full.min.js host karo.");}
 function readWorkbookFromFile(file){ensureXLSX();return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=e=>{try{resolve(XLSX.read(new Uint8Array(e.target.result),{type:"array",cellDates:true,raw:false}));}catch(err){reject(err);}};reader.onerror=()=>reject(new Error("File read failed"));reader.readAsArrayBuffer(file);});}
@@ -1141,7 +1148,100 @@ function loadPortalFromWorkbook(wb,sourceTag){const invoices=[],sheetStats=[];fo
 function parsePortalItem(item,section,sourceTag){const results=[];const gstin=normGstin(item.ctin||item.gstin||"");const trdnm=String(item.trdnm||item.trdNm||item.cname||item.trade_name||"");let invList=item.inv||item.nt||item.documents||[];if(item.inv&&!Array.isArray(item.inv))invList=[item.inv];for(const inv of invList){if(!inv||typeof inv!=="object")continue;const inv_no=String(inv.inum||inv.ntnum||inv.invoicenum||inv.docnum||inv.boe_num||"");const inv_dt=inv.dt||inv.idt||inv.ntdt||inv.invoice_date||inv.docdt||inv.refdt||"";let taxable=0,igst=0,cgst=0,sgst=0,cess=0;const itms=inv.itms||inv.items||[];if(itms.length){for(const it of itms){const det=it.itm_det||it.item_details||it;taxable+=num(det.txval??det.taxable_value);igst+=num(det.igst??det.iamt);cgst+=num(det.cgst??det.camt);sgst+=num(det.sgst??det.samt);cess+=num(det.cess??det.csamt);}}else{taxable=num(inv.txval??inv.taxable_value??inv.val);igst=num(inv.igst??inv.iamt??inv.igstamt);cgst=num(inv.cgst??inv.camt??inv.cgstamt);sgst=num(inv.sgst??inv.samt??inv.sgstamt);cess=num(inv.cess??inv.csamt);}let invVal=num(inv.val??inv.invoice_value);if(!invVal)invVal=Math.round((taxable+igst+cgst+sgst+cess)*100)/100;const rchrg=String(inv.rchrg||inv.rev||"N").toUpperCase();const rcm=(rchrg==="Y"||rchrg==="YES")?"Y":"N";const itc=inv.itc||inv.itcavl||{};const elg=String((itc&&itc.elg)||itc.eligibility||"Y").toUpperCase();const itc_elig=["Y","YES","ELIGIBLE",""].includes(elg)?"Eligible":"Ineligible";let vtype="Invoice";const ntyp=String(inv.ntty||inv.note_type||"").toUpperCase();if(["C","CRN","CNOTE"].includes(ntyp))vtype="Credit Note";else if(["D","DBN","DNOTE"].includes(ntyp))vtype="Debit Note";if(["cdnr","cdn","cdnur"].includes(section)&&vtype==="Invoice")vtype=ntyp==="D"?"Debit Note":"Credit Note";if(vtype==="Credit Note"&&taxable>0){taxable=-taxable;igst=-igst;cgst=-cgst;sgst=-sgst;cess=-cess;invVal=-Math.abs(invVal);}const ignoreFY=$("#optIgnoreFY")?.checked!==false;results.push({source:sourceTag,gstin,party_name:trdnm,invoice_no:inv_no,invoice_no_norm:normInv(inv_no,ignoreFY),invoice_date:parseDate(inv_dt),taxable_value:taxable,igst,cgst,sgst,cess,invoice_value:invVal,place_of_supply:String(inv.pos||inv.place_of_supply||""),voucher_type:vtype,rcm,itc_eligibility:itc_elig,section,get total_tax(){return this.igst+this.cgst+this.sgst+this.cess;},get match_key(){return this.gstin+"|"+this.invoice_no_norm;}});}return results;}
 function walkPortalJson(data,sourceTag){const invoices=[];const sectionKeys={b2b:"b2b",b2ba:"b2ba",cdnr:"cdnr",cdnra:"cdnra",cdn:"cdnr",cdnur:"cdnur",impg:"impg",impgsez:"impgsez",imps:"imps",isd:"isd",eco:"eco",ecom:"eco"};const seen=new Set();function harvest(obj,path=""){if(!obj)return;if(Array.isArray(obj)){obj.forEach((x,i)=>harvest(x,path+`[${i}]`));return;}if(typeof obj!=="object")return;for(const[k,v]of Object.entries(obj)){const kl=String(k).toLowerCase();if(sectionKeys[kl]&&Array.isArray(v)){const key=path+"."+kl;if(seen.has(key))continue;seen.add(key);const sec=sectionKeys[kl];for(const item of v){if(!item||typeof item!=="object")continue;if(["impg","impgsez","imps"].includes(sec)&&(item.inum||item.boe_num||item.refdt))invoices.push(...parsePortalItem({ctin:item.sgstin||item.ctin||"",trdnm:item.trdnm||item.portcode||"Import",inv:[item]},sec,sourceTag));else invoices.push(...parsePortalItem(item,sec,sourceTag));}}else harvest(v,path+"."+k);}}harvest(data);if(data.data)harvest(data.data);if(data.data&&data.data.docdata)harvest(data.data.docdata);const uniq=new Map();for(const inv of invoices){const k=[inv.gstin,inv.invoice_no_norm,inv.section,inv.taxable_value,inv.voucher_type].join("|");if(!uniq.has(k))uniq.set(k,inv);}return[...uniq.values()];}
 
-/* GST NEXUS v2.3 engine p2 — recon + summary + UI + init */
+
+/* GSTR-2B recipient profile + period auto-detection */
+let gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};
+function validRecipientGstin(v){return /^\d{2}[A-Z0-9]{13}$/.test(normGstin(v));}
+function profileCellValue(matrix,r,c){
+  const row=matrix[r]||[];
+  for(let x=c+1;x<Math.min(row.length,c+5);x++)if(String(row[x]??"").trim())return String(row[x]).trim();
+  for(let rr=r+1;rr<Math.min(matrix.length,r+3);rr++)for(let x=Math.max(0,c-1);x<=Math.min((matrix[rr]||[]).length-1,c+2);x++)if(String(matrix[rr]?.[x]??"").trim())return String(matrix[rr][x]).trim();
+  return "";
+}
+function extractProfileFromMatrices(sheets){
+  const profile={companyName:"",gstin:"",periodTokens:[]};
+  for(const sh of sheets||[]){const matrix=sh.matrix||[];
+    for(let r=0;r<Math.min(matrix.length,60);r++){
+      const row=matrix[r]||[],nonEmpty=row.filter(v=>String(v??"").trim()).length;
+      for(let c=0;c<row.length;c++){
+        const raw=String(row[c]??"").trim();if(!raw)continue;const label=normHeader(raw).replace(/[^a-z0-9/ ]/g," ").replace(/\s+/g," ").trim();
+        let v=profileCellValue(matrix,r,c),inline=raw.match(/[:\-]\s*([0-9A-Z]{15})\s*$/i);if(inline)v=inline[1];
+        const gstLabel=/^(gstin|gstin uin|recipient gstin|gstin of recipient|gstin of taxpayer|taxpayer gstin)$/.test(label)||label.includes("gstin of recipient")||label.includes("recipient gstin");
+        if(!profile.gstin&&nonEmpty<=5&&gstLabel&&validRecipientGstin(v))profile.gstin=normGstin(v);
+        const nameLabel=/^(legal name|trade name|company name|taxpayer name|legal name of recipient|trade name of recipient)$/.test(label)||label.includes("legal name of recipient")||label.includes("trade name of recipient");
+        if(!profile.companyName&&nonEmpty<=5&&nameLabel&&v&&!validRecipientGstin(v)&&v.length>2)profile.companyName=v;
+        const periodLabel=/^(tax period|return period|financial year|period)$/.test(label)||label.includes("tax period")||label.includes("return period");
+        if(periodLabel&&nonEmpty<=5&&v)profile.periodTokens.push(v);
+      }
+    }
+  }
+  return profile;
+}
+function extractProfileFromJson(data){
+  const profile={companyName:"",gstin:"",periodTokens:[]},roots=[data,data?.data,data?.data?.docdata,data?.docdata].filter(x=>x&&typeof x==="object"&&!Array.isArray(x));
+  const gstKeys=["gstin","recipientGstin","recipient_gstin","taxpayerGstin","taxpayer_gstin"],nameKeys=["legalName","legal_name","lgnm","tradeName","trade_name","tradeNam","taxpayerName","companyName"],periodKeys=["rtnprd","fp","returnPeriod","taxPeriod","tax_period","period"];
+  for(const obj of roots){
+    if(!profile.gstin)for(const k of gstKeys)if(validRecipientGstin(obj[k])){profile.gstin=normGstin(obj[k]);break;}
+    if(!profile.companyName)for(const k of nameKeys)if(typeof obj[k]==="string"&&obj[k].trim()){profile.companyName=obj[k].trim();break;}
+    for(const k of periodKeys)if(obj[k]!==undefined&&obj[k]!==null&&String(obj[k]).trim())profile.periodTokens.push(String(obj[k]).trim());
+  }
+  return profile;
+}
+function monthKeyFromToken(token){
+  const s=String(token||"").trim(),months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};let m;
+  m=s.match(/^(0[1-9]|1[0-2])(20\d{2})$/);if(m)return`${m[2]}-${m[1]}`;
+  m=s.match(/^(20\d{2})(0[1-9]|1[0-2])$/);if(m)return`${m[1]}-${m[2]}`;
+  m=s.match(/^(0[1-9]|1[0-2])[\/-](20\d{2})$/);if(m)return`${m[2]}-${m[1]}`;
+  m=s.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*['\-\s]?(\d{2,4})$/i);if(m){let y=Number(m[2]);if(y<100)y+=2000;return`${y}-${String(months[m[1].slice(0,3).toLowerCase()]).padStart(2,"0")}`;}
+  m=s.match(/^(20\d{2})[-/](0?[1-9]|1[0-2])$/);if(m)return`${m[1]}-${String(Number(m[2])).padStart(2,"0")}`;
+  return"";
+}
+function fyFromMonthKey(key){const[y,m]=String(key||"").split("-").map(Number);if(!y||!m)return"";const start=m>=4?y:y-1;return`${start}-${String(start+1).slice(-2)}`;}
+function quarterFromMonthKey(key){const m=Number(String(key||"").split("-")[1]);return m>=4&&m<=6?"Q1":m>=7&&m<=9?"Q2":m>=10&&m<=12?"Q3":"Q4";}
+function completePortalProfile(profile,invoices){
+  profile=profile||{companyName:"",gstin:"",periodTokens:[]};const monthSet=new Set();
+  for(const t of profile.periodTokens||[]){const k=monthKeyFromToken(t);if(k)monthSet.add(k);}
+  for(const inv of invoices||[]){const pk=monthKeyFromToken(inv.return_period);if(pk)monthSet.add(pk);else if(/^\d{4}-\d{2}/.test(inv.invoice_date||""))monthSet.add(inv.invoice_date.slice(0,7));}
+  const months=[...monthSet].sort();let type="",label="";
+  if(months.length===1){type="monthly";label=new Date(months[0]+"-01T00:00:00").toLocaleString("en-IN",{month:"short",year:"numeric"});}
+  else if(months.length>1&&months.length<=3&&new Set(months.map(quarterFromMonthKey)).size===1&&new Set(months.map(fyFromMonthKey)).size===1){type="quarterly";label=`${quarterFromMonthKey(months[0])} · FY ${fyFromMonthKey(months[0])}`;}
+  else if(months.length>1){type="yearly";const fys=[...new Set(months.map(fyFromMonthKey).filter(Boolean))];label=fys.length===1?`FY ${fys[0]}`:`${months[0]} to ${months[months.length-1]}`;}
+  return{companyName:profile.companyName||"",gstin:profile.gstin||"",periodTokens:profile.periodTokens||[],months,detectedType:type,detectedLabel:label};
+}
+function populateFinancialYears(){
+  const sel=$("#periodFY");if(!sel)return;const now=new Date(),base=(now.getMonth()+1)>=4?now.getFullYear():now.getFullYear()-1;sel.innerHTML="";
+  for(let y=base-4;y<=base+2;y++){const v=`${y}-${String(y+1).slice(-2)}`,o=document.createElement("option");o.value=v;o.textContent=`FY ${v}`;if(y===base)o.selected=true;sel.appendChild(o);}
+}
+function syncPeriodValue(){
+  const type=$("#periodType")?.value||"auto";let label="";
+  if(type==="auto")label=gstr2bProfile.detectedLabel||$("#periodDetected")?.value||"";
+  else if(type==="monthly"){const v=$("#periodMonth")?.value||"";label=v?new Date(v+"-01T00:00:00").toLocaleString("en-IN",{month:"short",year:"numeric"}):"";}
+  else if(type==="quarterly")label=`${$("#periodQuarter")?.value||"Q1"} · FY ${$("#periodFY")?.value||""}`;
+  else if(type==="yearly")label=`FY ${$("#periodFY")?.value||""}`;
+  if($("#period"))$("#period").value=label;return label;
+}
+function updatePeriodUI(){
+  const type=$("#periodType")?.value||"auto";
+  $("#periodMonthField")?.classList.toggle("hidden",type!=="monthly");$("#periodQuarterField")?.classList.toggle("hidden",type!=="quarterly");
+  $("#periodFYField")?.classList.toggle("hidden",!['quarterly','yearly'].includes(type));$("#periodDetectedField")?.classList.toggle("hidden",type!=="auto");syncPeriodValue();
+}
+function initPeriodControls(){
+  populateFinancialYears();["periodType","periodMonth","periodQuarter","periodFY"].forEach(id=>$(`#${id}`)?.addEventListener("change",updatePeriodUI));updatePeriodUI();
+}
+function applyGstr2bProfile(profile){
+  gstr2bProfile=completePortalProfile(profile,data2b);
+  if(gstr2bProfile.companyName)$("#company").value=gstr2bProfile.companyName;
+  if(gstr2bProfile.gstin)$("#gstin").value=gstr2bProfile.gstin;
+  if($("#periodDetected"))$("#periodDetected").value=gstr2bProfile.detectedLabel||"Period metadata not found";
+  if(gstr2bProfile.months.length){const first=gstr2bProfile.months[0];$("#periodMonth").value=first;const fy=fyFromMonthKey(first);if([...$("#periodFY").options].some(o=>o.value===fy))$("#periodFY").value=fy;$("#periodQuarter").value=quarterFromMonthKey(first);}
+  $("#periodType").value="auto";updatePeriodUI();
+}
+function profileInfoText(){
+  const parts=[];if(gstr2bProfile.companyName)parts.push(`Company: ${gstr2bProfile.companyName}`);if(gstr2bProfile.gstin)parts.push(`GSTIN: ${gstr2bProfile.gstin}`);if(gstr2bProfile.detectedLabel)parts.push(`Period: ${gstr2bProfile.detectedLabel}`);
+  if(!gstr2bProfile.companyName&&!gstr2bProfile.gstin)parts.push("Recipient company/GSTIN metadata file me available nahi hai — manual entry required");return parts.join("\n");
+}
+
+/* GST NEXUS v2.4 engine p2 — recon + summary + UI + init */
 const ACTION={
   MATCHED_ALL:"In books + 2A + 2B — can claim now (other GST rules still apply)",
   MATCHED_2B:"In books + GSTR-2B — can claim now in GSTR-3B",
@@ -1345,7 +1445,25 @@ async function loadBooksFile(file){
     prepareBooksImporter(sheets);setProgress(100);tryAutoRun();
   }catch(e){booksData=[];booksImportState=null;showAlert("Books error: "+e.message,"err");setProgress(0);updateReady();}
 }
-async function load2bFile(file){name2b=file.name;setProgress(20);try{const ext=extOf(file.name);if(["xlsx","xls","xlsm"].includes(ext)){const{invoices,sheetStats}=loadPortalFromWorkbook(await readWorkbookFromFile(file),"2b");data2b=invoices;$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${data2b.length} docs (Excel)${sheetStats.length?"\n"+sheetStats.join(" | "):""}`;}else if(ext==="json"){data2b=walkPortalJson(JSON.parse(await file.text()),"2b");$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${data2b.length} docs (JSON)`;}else{const text=await file.text();try{data2b=walkPortalJson(JSON.parse(text),"2b");}catch{data2b=parseCSV(text).map(r=>rowToInvoice(r,"2b","b2b")).filter(Boolean);}$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${data2b.length} docs`;}if(!data2b.length)showAlert("GSTR-2B empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();}catch(e){showAlert("2B error: "+e.message,"err");setProgress(0);}}
+async function load2bFile(file){
+  name2b=file.name;setProgress(20);
+  try{
+    const ext=extOf(file.name);let profile={companyName:"",gstin:"",periodTokens:[]},detail="";
+    if(["xlsx","xls","xlsm"].includes(ext)){
+      const wb=await readWorkbookFromFile(file),loaded=loadPortalFromWorkbook(wb,"2b");data2b=loaded.invoices;
+      const matrices=wb.SheetNames.map(name=>({name,matrix:sheetToMatrix(wb.Sheets[name])}));profile=extractProfileFromMatrices(matrices);
+      detail=`${data2b.length} docs (Excel)${loaded.sheetStats.length?"\n"+loaded.sheetStats.join(" | "):""}`;
+    }else if(ext==="json"){
+      const obj=JSON.parse(await file.text());data2b=walkPortalJson(obj,"2b");profile=extractProfileFromJson(obj);detail=`${data2b.length} docs (JSON)`;
+    }else{
+      const text=await file.text();
+      try{const obj=JSON.parse(text);data2b=walkPortalJson(obj,"2b");profile=extractProfileFromJson(obj);detail=`${data2b.length} docs (JSON)`;}
+      catch{const matrix=parseDelimitedMatrix(text);data2b=mappedRowsFromMatrix(matrix,findHeaderRow(matrix,60),"auto").map(r=>rowToInvoice(r,"2b","b2b")).filter(Boolean);profile=extractProfileFromMatrices([{name:"CSV",matrix}]);detail=`${data2b.length} docs (CSV)`;}
+    }
+    applyGstr2bProfile(profile);$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${detail}\n${profileInfoText()}`;
+    if(!data2b.length)showAlert("GSTR-2B empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();
+  }catch(e){data2b=[];gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};showAlert("2B error: "+e.message,"err");setProgress(0);updateReady();}
+}
 async function load2aFile(file){name2a=file.name;setProgress(20);try{const ext=extOf(file.name);if(["xlsx","xls","xlsm"].includes(ext)){const{invoices,sheetStats}=loadPortalFromWorkbook(await readWorkbookFromFile(file),"2a");data2a=invoices;$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (Excel)${sheetStats.length?"\n"+sheetStats.join(" | "):""}`;}else if(ext==="json"){data2a=walkPortalJson(JSON.parse(await file.text()),"2a");$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (JSON)`;}else{const text=await file.text();try{data2a=walkPortalJson(JSON.parse(text),"2a");}catch{data2a=parseCSV(text).map(r=>rowToInvoice(r,"2a","b2b")).filter(Boolean);}$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs`;}if(!data2a.length)showAlert("GSTR-2A empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();}catch(e){showAlert("2A error: "+e.message,"err");setProgress(0);}}
 function runRecon(){setProgress(30);const opts={tolerance:Number($("#tolerance").value)||1,dateTol:Number($("#dateTol").value)||0,enableProbable:$("#optProbable").checked,strength:$("#matchStrength").value,includeCN:$("#optCreditNotes").checked,mode,zeroInelig:$("#optIneligible").checked};lastResults=reconcileAll(booksData,data2b,data2a,opts);setProgress(70);lastSummary=buildSummary(lastResults,opts);filterStatus="ALL";render();setProgress(100);showAlert(`Done · ${lastResults.length} rows · Can claim now ${fmt(lastSummary.amounts.claimable_itc)} · Cannot claim yet ${fmt(lastSummary.amounts.hold_itc)}`,"ok");$("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;}
 function render(){
@@ -1400,10 +1518,10 @@ const SAMPLE_BOOKS=`Supplier GSTIN,Party Name,Invoice No,Invoice Date,Taxable Va
 09AAAAP7777M1Z2,Kanpur Metals,KM-5521,16-04-2026,45000.00,8100.00,0.00,0.00,0.00,53100.00,09-Uttar Pradesh,Purchase,N`;
 const SAMPLE_2B={data:{gstin:"24AAAAA0000A1Z5",rtnprd:"042026",docdata:{b2b:[{ctin:"24AABCT1332L1ZZ",trdnm:"Acme Traders Pvt Ltd",inv:[{inum:"INV-2026-001",dt:"05-04-2026",val:118000,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:100000,rt:18,camt:9000,samt:9000,iamt:0,csamt:0}}],itc:{elg:"Y"}},{inum:"INV-2026-002",dt:"08-04-2026",val:59000,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:50000,rt:18,camt:4500,samt:4500,iamt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"27AAACI1234A1Z5",trdnm:"Bharat Suppliers Mumbai",inv:[{inum:"BS/26-27/118",dt:"10-04-2026",val:29500,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:25000,rt:18,iamt:4500,camt:0,samt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"29AABCU9603R1Z2",trdnm:"Coromandel Industries",inv:[{inum:"CI-998",dt:"12-04-2026",val:89650,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:76000,rt:18,iamt:13680,camt:0,samt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"24AAADF0002F1Z5",trdnm:"Delta Fabrics Surat",inv:[{inum:"DF/APR/45",dt:"16-04-2026",val:47200,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:40000,rt:18,camt:3600,samt:3600,iamt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"27AAACG2222H1Z4",trdnm:"Global Spares Co",inv:[{inum:"GS-7788",dt:"20-04-2026",val:37760,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:32000,rt:18,iamt:5760,camt:0,samt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"33AAACT9912C1ZB",trdnm:"Horizon Polymers",inv:[{inum:"HP/26/441",dt:"25-04-2026",val:70800,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:60000,rt:18,iamt:10800,camt:0,samt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"24AAAHZ8888N1Z9",trdnm:"Zenith Packers",inv:[{inum:"ZP-1001",dt:"27-04-2026",val:23600,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:20000,rt:18,camt:1800,samt:1800,iamt:0,csamt:0}}],itc:{elg:"Y"}}]},{ctin:"09AAAAP7777M1Z2",trdnm:"Kanpur Metals",inv:[{inum:"KM-5521",dt:"16-04-2026",val:53100,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:45000,rt:18,iamt:8100,camt:0,samt:0,csamt:0}}],itc:{elg:"Y"}}]}],cdnr:[{ctin:"24AABCT1332L1ZZ",trdnm:"Acme Traders Pvt Ltd",nt:[{ntnum:"INV-2026-003",ntdt:"22-04-2026",ntty:"C",val:9440,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:8000,rt:18,camt:720,samt:720,iamt:0,csamt:0}}],itc:{elg:"Y"}}]}]}}};
 const SAMPLE_2A={data:{gstin:"24AAAAA0000A1Z5",fp:"042026",b2b:[{ctin:"24AABCT1332L1ZZ",cname:"Acme Traders Pvt Ltd",inv:[{inum:"INV-2026-001",idt:"05-04-2026",val:118000,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:100000,rt:18,camt:9000,samt:9000,iamt:0,csamt:0}}]},{inum:"INV-2026-002",idt:"08-04-2026",val:59000,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:50000,rt:18,camt:4500,samt:4500,iamt:0,csamt:0}}]},{inum:"INV-2026-004",idt:"29-04-2026",val:11800,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:10000,rt:18,camt:900,samt:900,iamt:0,csamt:0}}]}]},{ctin:"27AAACI1234A1Z5",cname:"Bharat Suppliers Mumbai",inv:[{inum:"BS/26-27/118",idt:"10-04-2026",val:29500,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:25000,rt:18,iamt:4500,camt:0,samt:0,csamt:0}}]}]},{ctin:"29AABCU9603R1Z2",cname:"Coromandel Industries",inv:[{inum:"CI-998",idt:"12-04-2026",val:89650,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:76000,rt:18,iamt:13680,camt:0,samt:0,csamt:0}}]}]},{ctin:"24AAADF0002F1Z5",cname:"Delta Fabrics Surat",inv:[{inum:"DF/APR/45",idt:"16-04-2026",val:47200,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:40000,rt:18,camt:3600,samt:3600,iamt:0,csamt:0}}]}]},{ctin:"27AAACG2222H1Z4",cname:"Global Spares Co",inv:[{inum:"GS-7788",idt:"20-04-2026",val:37760,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:32000,rt:18,iamt:5760,camt:0,samt:0,csamt:0}}]}]},{ctin:"33AAACT9912C1ZB",cname:"Horizon Polymers",inv:[{inum:"HP/26/441",idt:"25-04-2026",val:70800,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:60000,rt:18,iamt:10800,camt:0,samt:0,csamt:0}}]}]},{ctin:"24AAAHZ8888N1Z9",cname:"Zenith Packers",inv:[{inum:"ZP-1001",idt:"27-04-2026",val:23600,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:20000,rt:18,camt:1800,samt:1800,iamt:0,csamt:0}}]}]},{ctin:"09AAAAP7777M1Z2",cname:"Kanpur Metals",inv:[{inum:"KM-5521",idt:"16-04-2026",val:53100,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:45000,rt:18,iamt:8100,camt:0,samt:0,csamt:0}}]}]},{ctin:"24AAAEF1111G1Z3",cname:"Eagle Logistics",inv:[{inum:"EL-2201",idt:"18-04-2026",val:17700,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:15000,rt:18,camt:1350,samt:1350,iamt:0,csamt:0}}]}]}],cdn:[{ctin:"24AABCT1332L1ZZ",cname:"Acme Traders Pvt Ltd",nt:[{ntnum:"INV-2026-003",ntdt:"22-04-2026",ntty:"C",val:9440,pos:"24",rchrg:"N",itms:[{num:1,itm_det:{txval:8000,rt:18,camt:720,samt:720,iamt:0,csamt:0}}]}]}]}};
-function loadSample(){mode="both";updateModeUI();booksData=parseCSV(SAMPLE_BOOKS).map(r=>rowToInvoice(r,"books")).filter(Boolean);data2b=walkPortalJson(SAMPLE_2B,"2b");data2a=walkPortalJson(SAMPLE_2A,"2a");booksName="sample_books.csv";name2b="sample_2b.json";name2a="sample_2a.json";$("#booksInfo").style.display="block";$("#booksInfo").textContent=`✓ Sample books — ${booksData.length} invoices`;$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ Sample GSTR-2B — ${data2b.length} docs`;$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ Sample GSTR-2A — ${data2a.length} docs`;$("#company").value="Demo Trading Co (Surat)";$("#gstin").value="24AAAAA0000A1Z5";$("#period").value="Apr-2026";updateReady();runRecon();}
+function loadSample(){mode="both";updateModeUI();booksData=parseCSV(SAMPLE_BOOKS).map(r=>rowToInvoice(r,"books")).filter(Boolean);data2b=walkPortalJson(SAMPLE_2B,"2b");data2a=walkPortalJson(SAMPLE_2A,"2a");applyGstr2bProfile(extractProfileFromJson(SAMPLE_2B));booksName="sample_books.csv";name2b="sample_2b.json";name2a="sample_2a.json";$("#booksInfo").style.display="block";$("#booksInfo").textContent=`✓ Sample books — ${booksData.length} invoices`;$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ Sample GSTR-2B — ${data2b.length} docs`;$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ Sample GSTR-2A — ${data2a.length} docs`;$("#company").value="Demo Trading Co (Surat)";$("#gstin").value="24AAAAA0000A1Z5";$("#period").value="Apr-2026";updateReady();runRecon();}
 /* init full-screen blog mode */
 document.documentElement.classList.add("blog-embed");document.body.classList.add("blog-embed");
-loadSettings();applyTheme(settings.theme);applyDensity(settings.density);applyDisplayPrefs();
+loadSettings();initPeriodControls();applyTheme(settings.theme);applyDensity(settings.density);applyDisplayPrefs();
 $$(".mode").forEach(m=>m.addEventListener("click",()=>{mode=m.dataset.mode;updateModeUI();}));
 setupDrop("#dropBooks","#fileBooks",loadBooksFile);setupDrop("#drop2b","#file2b",load2bFile);setupDrop("#drop2a","#file2a",load2aFile);
 $("#booksMapSheet").addEventListener("change",e=>{if(!booksImportState)return;booksImportState.sheetIndex=Number(e.target.value)||0;renderBooksMapper(true);});
@@ -1427,5 +1545,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c712b62d6efcad',t:'MTc4NDI2ODUxNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
