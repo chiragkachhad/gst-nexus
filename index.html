@@ -245,6 +245,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .map-item label{display:block;color:var(--muted);font-size:.7rem;margin-bottom:4px}
 .map-item label b{color:var(--text)}
 .map-help{margin:10px 0 0;color:var(--faint);font-size:.72rem;line-height:1.45}
+.gstr-sheet-analysis{margin-bottom:12px;max-height:300px}
+.gstr-sheet-analysis table{min-width:900px}
+.gstr-sheet-analysis select,.gstr-sheet-analysis input[type=number]{min-width:95px;padding:6px 7px;border-radius:6px;font-size:.75rem;background:#fff;color:#0f172a;border:1px solid #cbd5e1}
+.gstr-sheet-analysis input[type=checkbox]{accent-color:var(--blue)}
+.gstr-sheet-analysis .btn-edit-sheet{padding:6px 9px;border-radius:6px;font-size:.7rem;background:var(--blue);color:#fff}
 .map-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px}
 .map-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:8px;background:var(--cbg);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);font-size:.72rem;font-weight:700}
 
@@ -283,7 +288,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .pill[data-s="IN_2A_NOT_2B"]{background:var(--abg);color:#fbbf24}
 .pill[data-s="VALUE_MISMATCH"],.pill[data-s="TAX_MISMATCH"]{background:var(--abg);color:#fbbf24}
 .pill[data-s="ONLY_IN_BOOKS"]{background:var(--rbg);color:#f87171}
-.pill[data-s="BOOKS_NOTE_NOT_IN_B2B"]{background:var(--pbg);color:#c084fc}
+.pill[data-s="BOOKS_NOTE_NOT_IN_B2B"],.pill[data-s="BOOKS_NOTE_UNMATCHED"]{background:var(--pbg);color:#c084fc}
 .pill[data-s="ONLY_IN_2B"],.pill[data-s="ONLY_IN_2A"]{background:rgba(239,68,68,.18);color:#fca5a5}
 .pill[data-s="PROBABLE_MATCH"],.pill[data-s="DATE_MISMATCH"],.pill[data-s="INVOICE_MISMATCH"]{background:var(--bbg);color:#60a5fa}
 .pill[data-s="GSTIN_MISMATCH"]{background:var(--abg);color:#f59e0b}
@@ -368,7 +373,7 @@ body.compact-table table.data{font-size:.72rem}
 .tag.GSTIN_MISMATCH{background:#b45309 !important;color:#fff !important}
 .tag.VALUE_MISMATCH,.tag.TAX_MISMATCH,.tag.IN_2A_NOT_2B{background:#c2410c !important;color:#fff !important}
 .tag.ONLY_IN_BOOKS{background:#dc2626 !important;color:#fff !important}
-.tag.BOOKS_NOTE_NOT_IN_B2B{background:#7c3aed !important;color:#fff !important}
+.tag.BOOKS_NOTE_NOT_IN_B2B,.tag.BOOKS_NOTE_UNMATCHED{background:#7c3aed !important;color:#fff !important}
 .tag.ONLY_IN_2B,.tag.ONLY_IN_2A{background:#b91c1c !important;color:#fff !important}
 .tag.DUPLICATE_BOOKS,.tag.DUPLICATE_PORTAL{background:#7c3aed !important;color:#fff !important}
 /* Source dots */
@@ -765,14 +770,18 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
     </button>
     <div class="map-top">
       <div class="field"><label>GSTR-2B sheet / table</label><select id="gstrMapSheet"></select></div>
+      <div class="field small"><label>Section Type</label><select id="gstrSectionType"><option value="b2b">B2B</option><option value="b2ba">B2BA</option><option value="cdnr">CDNR</option><option value="cdnra">CDNRA</option><option value="cdnur">CDNUR</option><option value="isd">ISD</option><option value="impg">IMPG</option><option value="impgsez">IMPGSEZ</option><option value="ecom">ECOM</option></select></div>
       <div class="field small"><label>Header row number</label><input type="number" id="gstrHeaderRow" value="1" min="1" step="1" /></div>
       <div class="field small"><label>Header rows</label><select id="gstrHeaderSpan"><option value="auto">Auto (1 or 2)</option><option value="1">1 row</option><option value="2">2 rows</option></select></div>
       <button type="button" class="btn-s" id="btnGstrAutoMap">Auto-detect Header</button>
+      <button type="button" class="btn-s" id="btnAnalyzeAllGstr">Analyze All Sheets</button>
       <span class="map-badge" id="gstrMapStatus">Waiting for GSTR-2B file</span>
     </div>
-    <div class="map-grid" id="gstrMapGrid"></div>
+    <div class="matrix gstr-sheet-analysis"><table><thead><tr><th>Use</th><th>Sheet</th><th>Section</th><th>Header Row</th><th>Header Rows</th><th>Docs</th><th>Mapped</th><th>Edit</th></tr></thead><tbody id="gstrSheetAnalysisBody"></tbody></table></div>
+    <div class="map-grid" id="gstrMapGrid" style="margin-top:12px"></div>
     <div class="map-actions">
-      <button type="button" class="btn-p" id="btnApplyGstrMap">Apply GSTR Mapping</button>
+      <button type="button" class="btn-p" id="btnApplyGstrMap">Apply Current Sheet Mapping</button>
+      <button type="button" class="btn-s" id="btnImportAllGstr">Import &amp; Reconcile All Data Sheets</button>
       <span class="privacy">Two-row GST portal headers are automatically combined. Header row manually change karke re-import bhi kar sakte hain.</span>
     </div>
     <p class="map-help">CSV/XLSX mein auto-detected header galat ho to Sheet, Header Row aur Header Rows select karein. GSTIN, Invoice No, Date, Taxable Value aur tax columns manually map kiye ja sakte hain.</p>
@@ -933,13 +942,13 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 </div>
 
 <footer>
-  GST Nexus v3.1 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
+  GST Nexus v3.3 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
   Copyright © Chirag Kachhad 2026 · @digigoindia
 </footer>
 
 <script>
-/* GST Nexus v3.1 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
-/* GST NEXUS v3.1 engine p1 — utils + parse */
+/* GST Nexus v3.3 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
+/* GST NEXUS v3.3 engine p1 — utils + parse */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const fmt = n => {
@@ -1098,9 +1107,9 @@ function compositeHeaderInfo(matrix,headerIdx,forcedSpan="auto"){
   }
   return{headerIdx,span,headers};
 }
-function mappedRowsFromMatrix(matrix,headerIdx,preset="auto",manualMap=null){
+function mappedRowsFromMatrix(matrix,headerIdx,preset="auto",manualMap=null,forcedSpan="auto"){
   if(!matrix.length)return[];
-  const info=compositeHeaderInfo(matrix,headerIdx,manualMap?.__span||"auto"),headers=info.headers,out=[];
+  const info=compositeHeaderInfo(matrix,headerIdx,manualMap?.__span||forcedSpan||"auto"),headers=info.headers,out=[];
   const autoMap=manualMap?null:mapHeaders(headers,preset);
   for(let r=headerIdx+info.span;r<matrix.length;r++){
     const row=matrix[r]||[];if(row.every(c=>c===null||c===undefined||String(c).trim()===""))continue;const mapped={};
@@ -1240,10 +1249,13 @@ const GSTR_MAP_FIELDS=[
   ["cgst","CGST",false],["sgst","SGST / UTGST",false],["cess","Cess",false],["invoice_value","Invoice Value",false],
   ["voucher_type","Invoice / Note Type",false],["rcm","Reverse Charge",false],["return_period","Return / Filing Period",false],["itc_eligibility","ITC Availability",false]
 ];
+
+const GSTR_SECTION_OPTIONS=[["b2b","B2B"],["b2ba","B2BA"],["cdnr","CDNR"],["cdnra","CDNRA"],["cdnur","CDNUR"],["isd","ISD"],["impg","IMPG"],["impgsez","IMPGSEZ"],["ecom","ECOM"]];
+function gstrSectionOptions(selected){return GSTR_SECTION_OPTIONS.map(([v,l])=>`<option value="${v}" ${v===selected?'selected':''}>${l}</option>`).join("");}
 function analyzeGstrSheet(sh){
   if(!sh?.matrix?.length)return null;const sn=String(sh.name||"").toLowerCase();if(/^help|instruction|readme/.test(sn)||/summary only|gstr-2b summary|itc summary|get ready/.test(sn))return null;
   const hi=findHeaderRow(sh.matrix,80),info=compositeHeaderInfo(sh.matrix,hi),headers=info.headers,joined=headers.map(normHeader).join(" "),portalLike=/gstin|invoice|note number|boe|bill number|document/.test(joined),sec=detectSection(sh.name),mappedRows=mappedRowsFromMatrix(sh.matrix,hi,"auto"),docs=mappedRows.map(r=>{if(["cdnr","cdnur","cdnra","cdn"].includes(sec)&&!r.voucher_type)r.voucher_type="C";return rowToInvoice(r,"2b",sec);}).filter(x=>x&&(x.invoice_no||x.taxable_value)),mappedCount=Object.keys(mapHeaders(headers,"auto")).length;
-  if(!docs.length&&!portalLike)return null;return{...sh,section:sec,autoHeader:hi,autoSpan:info.span,docCount:docs.length,mappedCount};
+  if(!docs.length)return null;return{...sh,section:sec,autoHeader:hi,autoSpan:info.span,docCount:docs.length,mappedCount};
 }
 function gstrAutoCandidate(sheets){
   let best={sheetIndex:0,headerIdx:0,count:0,score:-1};sheets.forEach((sh,si)=>{const score=(sh.docCount||0)*20+(sh.mappedCount||0);if(score>best.score)best={sheetIndex:si,headerIdx:sh.autoHeader||0,count:sh.docCount||0,score};});return best;
@@ -1251,7 +1263,7 @@ function gstrAutoCandidate(sheets){
 function renderGstrMapper(redetect=true){
   if(!gstrImportState?.sheets?.length)return;const panel=$("#gstrMapPanel"),sheetSel=$("#gstrMapSheet"),headerInput=$("#gstrHeaderRow"),spanSel=$("#gstrHeaderSpan"),grid=$("#gstrMapGrid");panel.classList.add("show");
   if(!sheetSel.options.length||sheetSel.options.length!==gstrImportState.sheets.length)sheetSel.innerHTML=gstrImportState.sheets.map((x,i)=>`<option value="${i}">${esc(x.name)} · ${String(x.section||'b2b').toUpperCase()} · ${x.docCount||0} docs</option>`).join("");
-  const si=gstrImportState.sheetIndex||0;sheetSel.value=String(si);const sh=gstrImportState.sheets[si];
+  const si=gstrImportState.sheetIndex||0;sheetSel.value=String(si);const sh=gstrImportState.sheets[si];$("#gstrSectionType").value=sh.section||detectSection(sh.name);
   if(redetect){gstrImportState.headerIdxBySheet[si]=findHeaderRow(sh.matrix,80);gstrImportState.spanBySheet[si]="auto";}
   const hi=Math.max(0,Math.min(sh.matrix.length-1,Number(gstrImportState.headerIdxBySheet[si]??sh.autoHeader??0))),forced=gstrImportState.spanBySheet[si]||"auto",info=compositeHeaderInfo(sh.matrix,hi,forced),headers=info.headers.map((h,i)=>h||`Column ${i+1}`),auto=mapHeaders(headers,"auto");
   headerInput.value=hi+1;spanSel.value=forced;
@@ -1259,10 +1271,20 @@ function renderGstrMapper(redetect=true){
   const mappedCount=GSTR_MAP_FIELDS.filter(([f])=>grid.querySelector(`[data-gstr-field="${f}"]`)?.value!=="-1").length,spanText=info.span===2?"2-row header":"1-row header",totalDocs=gstrImportState.sheets.reduce((n,x)=>n+(x.docCount||0),0);
   $("#gstrMapStatus").textContent=`${sh.name} · ${String(sh.section).toUpperCase()} · row ${hi+1} · ${spanText} · ${mappedCount}/${GSTR_MAP_FIELDS.length} mapped`;
   $("#gstrMapSummary").textContent=`${gstrImportState.sheets.length} data sheet${gstrImportState.sheets.length===1?'':'s'} · ${totalDocs} docs · ${sh.name} selected`;
+  renderGstrSheetAnalysis();
+}
+function renderGstrSheetAnalysis(){
+  const body=$("#gstrSheetAnalysisBody");if(!body||!gstrImportState?.sheets?.length)return;
+  body.innerHTML=gstrImportState.sheets.map((sh,i)=>{const hi=Number(gstrImportState.headerIdxBySheet[i]??sh.autoHeader??0),forced=gstrImportState.spanBySheet[i]||"auto",info=compositeHeaderInfo(sh.matrix,hi,forced),mapped=Object.keys(mapHeaders(info.headers,"auto")).length;return`<tr data-sheet-row="${i}"><td><input type="checkbox" data-gstr-use="${i}" ${sh.enabled!==false?'checked':''}></td><td><b>${esc(sh.name)}</b></td><td><select data-gstr-sec="${i}">${gstrSectionOptions(sh.section||detectSection(sh.name))}</select></td><td><input type="number" min="1" value="${hi+1}" data-gstr-hi="${i}"></td><td><select data-gstr-sp="${i}"><option value="auto" ${forced==='auto'?'selected':''}>Auto (${info.span})</option><option value="1" ${String(forced)==='1'?'selected':''}>1</option><option value="2" ${String(forced)==='2'?'selected':''}>2</option></select></td><td>${sh.docCount||0}</td><td>${mapped}/${GSTR_MAP_FIELDS.length}</td><td><button type="button" class="btn-edit-sheet" data-gstr-edit="${i}">Edit Columns</button></td></tr>`;}).join("");
+  body.querySelectorAll('[data-gstr-use]').forEach(el=>el.onchange=()=>{gstrImportState.sheets[Number(el.dataset.gstrUse)].enabled=el.checked;});
+  body.querySelectorAll('[data-gstr-sec]').forEach(el=>el.onchange=()=>{gstrImportState.sheets[Number(el.dataset.gstrSec)].section=el.value;});
+  body.querySelectorAll('[data-gstr-hi]').forEach(el=>el.onchange=()=>{gstrImportState.headerIdxBySheet[Number(el.dataset.gstrHi)]=Math.max(0,(Number(el.value)||1)-1);});
+  body.querySelectorAll('[data-gstr-sp]').forEach(el=>el.onchange=()=>{gstrImportState.spanBySheet[Number(el.dataset.gstrSp)]=el.value;});
+  body.querySelectorAll('[data-gstr-edit]').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.gstrEdit);gstrImportState.sheetIndex=i;$("#gstrMapSheet").value=String(i);renderGstrMapper(false);});
 }
 function prepareGstrMapper(sheets,profile,fileName){
   if(!sheets?.length){gstrImportState=null;$("#gstrMapPanel").classList.remove("show","open");return;}
-  const dataSheets=sheets.map(analyzeGstrSheet).filter(Boolean);
+  const dataSheets=sheets.map(analyzeGstrSheet).filter(Boolean);dataSheets.forEach(x=>x.enabled=true);
   if(!dataSheets.length){gstrImportState=null;$("#gstrMapPanel").classList.remove("show","open");return;}
   const best=gstrAutoCandidate(dataSheets),headerIdxBySheet={},spanBySheet={};dataSheets.forEach((x,i)=>{headerIdxBySheet[i]=x.autoHeader||0;spanBySheet[i]="auto";});
   gstrImportState={sheets:dataSheets,profile:profile||{},fileName:fileName||name2b,sheetIndex:best.sheetIndex,headerIdxBySheet,spanBySheet,manualMaps:{}};
@@ -1271,18 +1293,27 @@ function prepareGstrMapper(sheets,profile,fileName){
 function parseGstrImportState(){
   const all=[];
   for(let si=0;si<gstrImportState.sheets.length;si++){
-    const sh=gstrImportState.sheets[si],sn=sh.name.toLowerCase();if(/^help|instruction|readme/.test(sn)||/summary only|gstr-2b summary|itc summary|get ready/.test(sn))continue;
-    const hi=Number(gstrImportState.headerIdxBySheet[si]??findHeaderRow(sh.matrix,80)),manual=gstrImportState.manualMaps[si]||null,sec=detectSection(sh.name),rows=mappedRowsFromMatrix(sh.matrix,hi,"auto",manual);
+    const sh=gstrImportState.sheets[si],sn=sh.name.toLowerCase();if(sh.enabled===false||/^help|instruction|readme/.test(sn)||/summary only|gstr-2b summary|itc summary|get ready/.test(sn))continue;
+    const hi=Number(gstrImportState.headerIdxBySheet[si]??findHeaderRow(sh.matrix,80)),manual=gstrImportState.manualMaps[si]||null,sec=sh.section||detectSection(sh.name),rows=mappedRowsFromMatrix(sh.matrix,hi,"auto",manual,gstrImportState.spanBySheet[si]||"auto");
     for(const mapped of rows){if(["cdnr","cdnur","cdnra","cdn"].includes(sec)&&!mapped.voucher_type)mapped.voucher_type="C";const inv=rowToInvoice(mapped,"2b",sec);if(inv&&(inv.invoice_no||inv.taxable_value))all.push(inv);}
   }
   const uniq=new Map();for(const inv of all){const k=[inv.gstin,inv.invoice_no_norm,inv.section,inv.taxable_value,inv.voucher_type].join("|");if(!uniq.has(k))uniq.set(k,inv);}return[...uniq.values()];
 }
+function refreshGstrSheetCounts(){
+  for(let si=0;si<gstrImportState.sheets.length;si++){const sh=gstrImportState.sheets[si],hi=Number(gstrImportState.headerIdxBySheet[si]??sh.autoHeader??0),manual=gstrImportState.manualMaps[si]||null,sec=sh.section||detectSection(sh.name),rows=mappedRowsFromMatrix(sh.matrix,hi,"auto",manual,gstrImportState.spanBySheet[si]||"auto");let count=0;for(const m of rows){if(["cdnr","cdnur","cdnra","cdn"].includes(sec)&&!m.voucher_type)m.voucher_type="C";const inv=rowToInvoice(m,"2b",sec);if(inv&&(inv.invoice_no||inv.taxable_value))count++;}sh.docCount=count;}
+}
+function analyzeAllGstrSheets(){
+  if(!gstrImportState)return;gstrImportState.sheets.forEach((sh,i)=>{gstrImportState.headerIdxBySheet[i]=findHeaderRow(sh.matrix,80);gstrImportState.spanBySheet[i]="auto";delete gstrImportState.manualMaps[i];sh.section=detectSection(sh.name);sh.enabled=true;});refreshGstrSheetCounts();renderGstrMapper(false);showAlert(`${gstrImportState.sheets.length} GSTR data sheets analyzed. Section/header review karke Import All karein.`,"info");
+}
+function importAllGstrSheets(){
+  if(!gstrImportState)return;refreshGstrSheetCounts();data2b=parseGstrImportState();applyGstr2bProfile(gstrImportState.profile);const sections={};data2b.forEach(x=>sections[String(x.section||"b2b").toUpperCase()]=(sections[String(x.section||"b2b").toUpperCase()]||0)+1);const summary=Object.entries(sections).map(([k,v])=>`${k}: ${v}`).join(" | ");
+  $("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${gstrImportState.fileName}\n${data2b.length} docs from ${Object.keys(sections).length} data sheets\n${summary}\n${profileInfoText()}`;renderGstrSheetAnalysis();$("#gstrMapSummary").textContent=`${gstrImportState.sheets.length} data sheets · ${data2b.length} docs · ${summary}`;$("#gstrMapPanel").classList.remove("open");$("#gstrMapToggle").setAttribute("aria-expanded","false");
+  if(!data2b.length)showAlert("Selected GSTR sheets/header mapping se records nahi mile.","err");else showAlert(`All GSTR sheets imported · ${summary}`,"ok");updateReady();
+}
 function applyGstrMapping(){
   if(!gstrImportState?.sheets?.length)return;const si=Number($("#gstrMapSheet").value)||0,sh=gstrImportState.sheets[si],hi=Math.max(0,Math.min(sh.matrix.length-1,(Number($("#gstrHeaderRow").value)||1)-1)),manual={__span:$("#gstrHeaderSpan").value||"auto"};
   GSTR_MAP_FIELDS.forEach(([field])=>{const v=Number($(`#gstrMapGrid [data-gstr-field="${field}"]`)?.value);if(Number.isInteger(v)&&v>=0)manual[field]=v;});const missing=["gstin","invoice_no","taxable_value"].filter(f=>manual[f]===undefined);if(missing.length){showAlert("GSTR mapping required: "+missing.join(", "),"err");return;}
-  gstrImportState.sheetIndex=si;gstrImportState.headerIdxBySheet[si]=hi;gstrImportState.spanBySheet[si]=manual.__span;gstrImportState.manualMaps[si]=manual;data2b=parseGstrImportState();applyGstr2bProfile(gstrImportState.profile);
-  $("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${gstrImportState.fileName}\n${data2b.length} docs · manual header mapping applied\n${profileInfoText()}`;$("#gstrMapPanel").classList.remove("open");$("#gstrMapToggle").setAttribute("aria-expanded","false");$("#gstrMapSummary").textContent=`Imported ${data2b.length} docs · click to edit header`;
-  if(!data2b.length)showAlert("Selected GSTR header/mapping se records nahi mile.","err");else showAlert(`GSTR-2B re-imported: ${data2b.length} documents`,"ok");updateReady();
+  sh.section=$("#gstrSectionType").value||detectSection(sh.name);sh.enabled=true;gstrImportState.sheetIndex=si;gstrImportState.headerIdxBySheet[si]=hi;gstrImportState.spanBySheet[si]=manual.__span;gstrImportState.manualMaps[si]=manual;importAllGstrSheets();
 }
 
 const SHEET_SECTION={"b2b":"b2b","b2ba":"b2ba","cdnr":"cdnr","cdnra":"cdnra","cdn":"cdnr","cdnur":"cdnur","impg":"impg","impgsez":"impgsez","imps":"imps","isd":"isd","eco":"eco","ecom":"eco"};
@@ -1418,7 +1449,7 @@ function profileInfoText(){
   if(!gstr2bProfile.companyName&&!gstr2bProfile.gstin)parts.push("Recipient company/GSTIN metadata file me available nahi hai — manual entry required");return parts.join("\n");
 }
 
-/* GST NEXUS v3.1 engine p2 — recon + summary + UI + init */
+/* GST NEXUS v3.3 engine p2 — recon + summary + UI + init */
 const ACTION={
   MATCHED_ALL:"In books + 2A + 2B — can claim now (other GST rules still apply)",
   MATCHED_2B:"In books + GSTR-2B — can claim now in GSTR-3B",
@@ -1432,6 +1463,7 @@ const ACTION={
   GSTIN_MISMATCH:"Invoice, date and values match, but GSTIN differs — correct party ledger/GSTIN",
   ONLY_IN_BOOKS:"Purchase invoice only in books, not in GSTR-2B — verify supplier filing",
   BOOKS_NOTE_NOT_IN_B2B:"Debit/Credit note is in books, but uploaded GSTR file contains B2B only — upload CDNR section for note reconciliation",
+  BOOKS_NOTE_UNMATCHED:"Debit/Credit note is available in books but no matching CDNR/CDNRA document was found",
   ONLY_IN_2B:"In GSTR-2B but not in your books — add entry or check if wrong",
   ONLY_IN_2A:"Only in GSTR-2A — track supplier / books",
   DUPLICATE_BOOKS:"Same invoice appears twice in books",
@@ -1555,9 +1587,9 @@ function reconcileBooks2bSmart(books,data2b,opts){
     results.push(smart2bResult(status,b,t,tolerance,extra));
   }
   const portalHasNotes=data2b.some(x=>x.voucher_type!=="Invoice"||["cdnr","cdnra","cdnur","cdn"].includes(String(x.section||"").toLowerCase()));
-  books.forEach((b,i)=>{if(!usedB.has(i)){const st=b.voucher_type!=="Invoice"&&!portalHasNotes?"BOOKS_NOTE_NOT_IN_B2B":"ONLY_IN_BOOKS";results.push(smart2bResult(st,b,null,tolerance));}});
+  books.forEach((b,i)=>{if(!usedB.has(i)){const st=b.voucher_type!=="Invoice"?(portalHasNotes?"BOOKS_NOTE_UNMATCHED":"BOOKS_NOTE_NOT_IN_B2B"):"ONLY_IN_BOOKS";results.push(smart2bResult(st,b,null,tolerance));}});
   data2b.forEach((t,j)=>{if(!usedT.has(j))results.push(smart2bResult("ONLY_IN_2B",null,t,tolerance));});
-  const order={VALUE_MISMATCH:0,TAX_MISMATCH:1,GSTIN_MISMATCH:2,INVOICE_MISMATCH:3,DATE_MISMATCH:4,ONLY_IN_BOOKS:5,BOOKS_NOTE_NOT_IN_B2B:6,ONLY_IN_2B:7,DUPLICATE_BOOKS:7,DUPLICATE_PORTAL:8,MATCHED_2B:20};
+  const order={VALUE_MISMATCH:0,TAX_MISMATCH:1,GSTIN_MISMATCH:2,INVOICE_MISMATCH:3,DATE_MISMATCH:4,ONLY_IN_BOOKS:5,BOOKS_NOTE_NOT_IN_B2B:6,BOOKS_NOTE_UNMATCHED:7,ONLY_IN_2B:8,DUPLICATE_BOOKS:7,DUPLICATE_PORTAL:8,MATCHED_2B:20};
   results.sort((a,b)=>(order[a.status]??99)-(order[b.status]??99));
   return results;
 }
@@ -1577,7 +1609,7 @@ function buildSummary(results,opts={}){
     if(["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)){s.matched++;if(r.portal2b)amounts.matched_taxable+=r.portal2b.taxable_value;else if(r.books)amounts.matched_taxable+=r.books.taxable_value;}
     else if(r.status==="IN_2A_NOT_2B"){s.a_not_b++;s.hold++;const itc=taxOf(r.portal2a||r.books);amounts.pending_2b_itc+=itc;amounts.hold_itc+=itc;s.hold_itc+=itc;}
     else if(["VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status)){s.hold++;const itc=taxOf(r.portal2b||r.portal2a||r.books);amounts.hold_itc+=itc;s.hold_itc+=itc;}
-    else if(["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","DUPLICATE_BOOKS"].includes(r.status)){s.hold++;if(r.books){amounts.only_books_taxable+=r.books.taxable_value;amounts.hold_itc+=taxOf(r.books);s.hold_itc+=taxOf(r.books);}}
+    else if(["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","BOOKS_NOTE_UNMATCHED","DUPLICATE_BOOKS"].includes(r.status)){s.hold++;if(r.books){amounts.only_books_taxable+=r.books.taxable_value;amounts.hold_itc+=taxOf(r.books);s.hold_itc+=taxOf(r.books);}}
     else if(r.status==="ONLY_IN_2B"||r.status==="DUPLICATE_PORTAL"){s.portal_only++;if(r.portal2b){amounts.only_2b_taxable+=r.portal2b.taxable_value;amounts.investigate_itc+=taxOf(r.portal2b);}}
     else if(r.status==="ONLY_IN_2A"){s.portal_only++;if(r.portal2a){amounts.only_2a_taxable+=r.portal2a.taxable_value;amounts.investigate_itc+=taxOf(r.portal2a);}}
   }
@@ -1646,6 +1678,9 @@ async function loadBooksFile(file,skipRoleCheck=false){
     prepareBooksImporter(sheets);setProgress(100);tryAutoRun();
   }catch(e){booksData=[];booksImportState=null;showAlert("Books error: "+e.message,"err");setProgress(0);updateReady();}
 }
+function portalSectionSummary(list){
+  const counts={};for(const x of list||[]){const k=String(x.section||"b2b").toUpperCase();counts[k]=(counts[k]||0)+1;}return{counts,text:Object.entries(counts).map(([k,v])=>`${k}: ${v}`).join(" | "),hasNotes:Object.keys(counts).some(k=>["CDNR","CDNRA","CDNUR","CDN"].includes(k))};
+}
 async function load2bFile(file,skipRoleCheck=false){
   name2b=file.name;setProgress(20);
   try{
@@ -1670,8 +1705,8 @@ async function load2bFile(file,skipRoleCheck=false){
         data2b=mappedRowsFromMatrix(matrix,findHeaderRow(matrix,60),"auto").map(r=>rowToInvoice(r,"2b","b2b")).filter(Boolean);profile=extractProfileFromMatrices(tables);detail=`${data2b.length} docs (CSV)`;
       }
     }
-    profile=enrichProfileFromFilename(profile,file.name);prepareGstrMapper(tabularSheets,profile,file.name);applyGstr2bProfile(profile);$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${detail}\n${profileInfoText()}`;
-    if(!data2b.length)showAlert("GSTR-2B empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();
+    profile=enrichProfileFromFilename(profile,file.name);prepareGstrMapper(tabularSheets,profile,file.name);applyGstr2bProfile(profile);const secSummary=portalSectionSummary(data2b);$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${detail}\nSections: ${secSummary.text||"none"}${secSummary.hasNotes?"":"\nCDNR/CDNRA: not present in uploaded file"}\n${profileInfoText()}`;
+    if(!data2b.length)showAlert("GSTR-2B empty","err");else if(!secSummary.hasNotes)showAlert(`GSTR loaded: ${secSummary.text}. CDNR/CDNRA data uploaded file me nahi hai. Notes reconciliation ke liye original multi-sheet XLSX upload karein.`,"info");else clearAlert();updateReady();setProgress(100);tryAutoRun();
   }catch(e){data2b=[];gstrImportState=null;$("#gstrMapPanel").classList.remove("show","open");gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};showAlert("2B error: "+e.message,"err");setProgress(0);updateReady();}
 }
 async function load2aFile(file){name2a=file.name;setProgress(20);try{const ext=extOf(file.name);if(["xlsx","xls","xlsm"].includes(ext)){const{invoices,sheetStats}=loadPortalFromWorkbook(await readWorkbookFromFile(file),"2a");data2a=invoices;$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (Excel)${sheetStats.length?"\n"+sheetStats.join(" | "):""}`;}else if(ext==="json"){data2a=walkPortalJson(JSON.parse(await file.text()),"2a");$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (JSON)`;}else{const text=await file.text();try{data2a=walkPortalJson(JSON.parse(text),"2a");}catch{data2a=parseCSV(text).map(r=>rowToInvoice(r,"2a","b2b")).filter(Boolean);}$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs`;}if(!data2a.length)showAlert("GSTR-2A empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();}catch(e){showAlert("2A error: "+e.message,"err");setProgress(0);}}
@@ -1682,17 +1717,17 @@ function runRecon(){
   const linked=lastResults.filter(r=>r.books&&(r.portal2b||r.portal2a)).length,minRows=Math.min(booksScope.length||Infinity,(g2bScope.length||g2aScope.length)||Infinity),ratio=Number.isFinite(minRows)&&minRows?linked/minRows:0,scopeText=$("#period").value?` · ${$("#period").value}`:"";
   if(linked===0&&minRows>=10)showAlert(`0 invoices matched out of Books ${booksScope.length} and GSTR-2B ${g2bScope.length}${scopeText}. Files may be reversed or GSTIN/Invoice columns are mapped incorrectly.`,"err");
   else if(ratio<0.1&&minRows>=20)showAlert(`Warning: sirf ${linked} invoices matched${scopeText}. File role, GSTIN and Invoice No mapping verify karein.`,"err");
-  else showAlert(`Done${scopeText} · ${linked} linked · Only Books invoices ${lastSummary.counts.ONLY_IN_BOOKS||0} · Books notes ${lastSummary.counts.BOOKS_NOTE_NOT_IN_B2B||0} · Only 2B ${lastSummary.counts.ONLY_IN_2B||0}`,"ok");
+  else showAlert(`Done${scopeText} · ${linked} linked · Only Books invoices ${lastSummary.counts.ONLY_IN_BOOKS||0} · Books notes ${(lastSummary.counts.BOOKS_NOTE_NOT_IN_B2B||0)+(lastSummary.counts.BOOKS_NOTE_UNMATCHED||0)} · Only 2B ${lastSummary.counts.ONLY_IN_2B||0}`,"ok");
   $("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;
 }
 function render(){
   $("#results").classList.remove("hidden");const a=lastSummary.amounts,c=lastSummary.counts;
   $("#kClaim").textContent=fmt(a.claimable_itc);$("#kHold").textContent=fmt(a.hold_itc);$("#k2aOnly").textContent=fmt(a.pending_2b_itc);$("#kInv").textContent=fmt(a.investigate_itc);$("#kCount").textContent=String(lastSummary.total);
   $("#kSplit").textContent=`Matched ${(c.MATCHED||0)+(c.MATCHED_2B||0)+(c.MATCHED_ALL||0)} · Pending ${c.ONLY_IN_BOOKS||0} · 2A≠2B ${c.IN_2A_NOT_2B||0}`;$("#genAt").textContent="Generated: "+lastSummary.generated_at;
-  const matrixGroups=[{key:"MATCHED_ALL",label:"Books + 2A + 2B",act:"Can claim now"},{key:"MATCHED_2B",label:"Books + 2B",act:"Can claim now"},{key:"MATCHED",label:"Matched (mode)",act:"Can claim / review"},{key:"DATE_MISMATCH",label:"Date mismatch",act:"Check invoice date"},{key:"INVOICE_MISMATCH",label:"Invoice number difference",act:"Verify / correct invoice no"},{key:"GSTIN_MISMATCH",label:"GSTIN difference",act:"Correct party ledger GSTIN"},{key:"IN_2A_NOT_2B",label:"Books + 2A, not 2B",act:"Cannot claim yet"},{key:"VALUE_MISMATCH",label:"Value mismatch",act:"Check & fix"},{key:"TAX_MISMATCH",label:"Tax mismatch",act:"Check & fix"},{key:"PROBABLE_MATCH",label:"Probable match",act:"Check manually"},{key:"ONLY_IN_BOOKS",label:"Only in Books",act:"Cannot claim yet — ask supplier"},{key:"BOOKS_NOTE_NOT_IN_B2B",label:"Books Debit/Credit Notes",act:"Upload GSTR CDNR for note matching"},{key:"ONLY_IN_2B",label:"Only in 2B",act:"Add in books / check"},{key:"ONLY_IN_2A",label:"Only in 2A",act:"Track / add in books"}];
+  const matrixGroups=[{key:"MATCHED_ALL",label:"Books + 2A + 2B",act:"Can claim now"},{key:"MATCHED_2B",label:"Books + 2B",act:"Can claim now"},{key:"MATCHED",label:"Matched (mode)",act:"Can claim / review"},{key:"DATE_MISMATCH",label:"Date mismatch",act:"Check invoice date"},{key:"INVOICE_MISMATCH",label:"Invoice number difference",act:"Verify / correct invoice no"},{key:"GSTIN_MISMATCH",label:"GSTIN difference",act:"Correct party ledger GSTIN"},{key:"IN_2A_NOT_2B",label:"Books + 2A, not 2B",act:"Cannot claim yet"},{key:"VALUE_MISMATCH",label:"Value mismatch",act:"Check & fix"},{key:"TAX_MISMATCH",label:"Tax mismatch",act:"Check & fix"},{key:"PROBABLE_MATCH",label:"Probable match",act:"Check manually"},{key:"ONLY_IN_BOOKS",label:"Only in Books",act:"Cannot claim yet — ask supplier"},{key:"BOOKS_NOTE_NOT_IN_B2B",label:"Books Debit/Credit Notes",act:"Upload GSTR CDNR for note matching"},{key:"BOOKS_NOTE_UNMATCHED",label:"Unmatched Books Notes",act:"Check note number in CDNR/CDNRA"},{key:"ONLY_IN_2B",label:"Only in 2B",act:"Add in books / check"},{key:"ONLY_IN_2A",label:"Only in 2A",act:"Track / add in books"}];
   const mb=$("#matrixBody");mb.innerHTML="";for(const g of matrixGroups){const rows=lastResults.filter(r=>r.status===g.key);if(!rows.length)continue;let taxable=0,tax=0;for(const r of rows){const inv=r.books||r.portal2b||r.portal2a;if(inv){taxable+=inv.taxable_value;tax+=inv.total_tax;}}const tr=document.createElement("tr");tr.innerHTML=`<td style="color:#0f172a!important">${esc(g.label)}</td><td style="color:#0f172a!important">${rows.length}</td><td class="money" style="color:#0f172a!important">${fmt(taxable)}</td><td class="money" style="color:#0f172a!important">${fmt(tax)}</td><td style="color:#0f172a!important">${esc(g.act)}</td>`;mb.appendChild(tr);}
   const matched=(c.MATCHED||0)+(c.MATCHED_2B||0)+(c.MATCHED_ALL||0)+(c.DATE_MISMATCH||0),total=lastSummary.total||1;
-  $("#qualityBody").innerHTML=[["Exact / clean match",matched,"Can claim (subject to Sec 16)"],["Needs attention",(c.VALUE_MISMATCH||0)+(c.TAX_MISMATCH||0)+(c.PROBABLE_MATCH||0)+(c.INVOICE_MISMATCH||0)+(c.GSTIN_MISMATCH||0)+(c.IN_2A_NOT_2B||0),"Fix before claim"],["Only in books",c.ONLY_IN_BOOKS||0,"Purchase invoices missing in 2B"],["Books notes",c.BOOKS_NOTE_NOT_IN_B2B||0,"Upload CDNR for Debit/Credit notes"],["Only on portal",(c.ONLY_IN_2B||0)+(c.ONLY_IN_2A||0),"Missing in books"]].map(([n,cnt,note])=>`<tr><td>${n}</td><td>${cnt}</td><td>${((cnt/total)*100).toFixed(1)}%</td><td style="color:#0f172a!important;font-weight:500">${note}</td></tr>`).join("");
+  $("#qualityBody").innerHTML=[["Exact / clean match",matched,"Can claim (subject to Sec 16)"],["Needs attention",(c.VALUE_MISMATCH||0)+(c.TAX_MISMATCH||0)+(c.PROBABLE_MATCH||0)+(c.INVOICE_MISMATCH||0)+(c.GSTIN_MISMATCH||0)+(c.IN_2A_NOT_2B||0),"Fix before claim"],["Only in books",c.ONLY_IN_BOOKS||0,"Purchase invoices missing in 2B"],["Books notes",(c.BOOKS_NOTE_NOT_IN_B2B||0)+(c.BOOKS_NOTE_UNMATCHED||0),"Upload/check CDNR for Debit/Credit notes"],["Only on portal",(c.ONLY_IN_2B||0)+(c.ONLY_IN_2A||0),"Missing in books"]].map(([n,cnt,note])=>`<tr><td>${n}</td><td>${cnt}</td><td>${((cnt/total)*100).toFixed(1)}%</td><td style="color:#0f172a!important;font-weight:500">${note}</td></tr>`).join("");
   const sectionStats={};
   for(const r of lastResults){const inv=r.portal2b;if(!inv)continue;const sec=String(inv.section||"b2b").toUpperCase();if(!sectionStats[sec])sectionStats[sec]={docs:0,linked:0,only:0,notes:0};const x=sectionStats[sec];x.docs++;if(r.books)x.linked++;if(r.status==="ONLY_IN_2B")x.only++;if(inv.voucher_type!=="Invoice")x.notes++;}
   $("#sectionBody").innerHTML=Object.entries(sectionStats).sort((a,b)=>a[0].localeCompare(b[0])).map(([sec,x])=>`<tr><td><b>${esc(sec)}</b></td><td>${x.docs}</td><td class="yes">${x.linked}</td><td>${x.only}</td><td>${x.notes}</td></tr>`).join("")||'<tr><td colspan="5">No GSTR-2B section data in selected mode/period</td></tr>';
@@ -1723,8 +1758,8 @@ function downloadBlob(filename,blob){const a=document.createElement("a");a.href=
 function downloadText(filename,text,mime="text/plain"){downloadBlob(filename,new Blob([text],{type:mime}));}
 function exportCsv(){if(!maybeConfirmExport("Detail CSV"))return;const rows=lastResults.map(toRow);if(!rows.length)return;const keys=Object.keys(rows[0]),lines=[keys.join(",")];for(const r of rows)lines.push(keys.map(k=>{let v=r[k];if(v===null||v===undefined)v="";v=String(v);if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';return v;}).join(","));downloadText(exportFileName("Recon","csv"),(settings.exportBom!==false?"\uFEFF":"")+lines.join("\n"),"text/csv");}
 function exportJson(){if(!maybeConfirmExport("JSON pack"))return;downloadText(exportFileName("Pack","json"),JSON.stringify({meta:{product:"GST Nexus",version:"2.1",mode,company:$("#company").value,gstin:$("#gstin").value,period:$("#period").value,theme:settings.theme},summary:lastSummary,results:lastResults.map(toRow)},null,2),"application/json");}
-function exportFollowup(){if(!maybeConfirmExport("Supplier follow-up"))return;const lines=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"].join(",")];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r),inv=row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,taxable=row.taxable_books||row.taxable_2b||0,tax=row.total_tax_books||row.total_tax_2b||0;const msg=r.status==="ONLY_IN_BOOKS"?`Invoice ${inv} not in GSTR-2B — please file GSTR-1`:`Please verify invoice ${inv}. ${r.remarks||""}`;lines.push([row.gstin,row.party_name,inv,row.invoice_date,taxable,tax,r.status,msg].map(v=>{v=String(v??"");if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';return v;}).join(","));}downloadText(exportFileName("Supplier_Followup","csv"),(settings.exportBom!==false?"\uFEFF":"")+lines.join("\n"),"text/csv");}
-function exportAuditExcel(){if(!maybeConfirmExport("Audit Excel"))return;ensureXLSX();const rows=lastResults.map(toRow),wb=XLSX.utils.book_new();const dash=[["GST NEXUS — Audit Pack"],["Generated",lastSummary.generated_at],["Mode",mode],["Company",$("#company").value],["GSTIN",$("#gstin").value],["Period",$("#period").value],[],["Can claim now",lastSummary.amounts.claimable_itc],["Cannot claim yet",lastSummary.amounts.hold_itc],["In 2A not 2B",lastSummary.amounts.pending_2b_itc],["Only on portal",lastSummary.amounts.investigate_itc],[],["Status","Count"]];for(const[s,c]of Object.entries(lastSummary.counts))dash.push([s,c]);dash.push([],["Copyright © Chirag Kachhad 2026 · @digigoindia"]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dash),"01_Dashboard");const headers=["Status","Action","GSTIN","GSTIN Books","GSTIN 2B","2B Section","Party","Books","2A","2B","Inv Books","Inv 2B","Inv 2A","Date","Taxable Books","Taxable 2B","Taxable 2A","Diff","Tax Books","Tax 2B","Tax 2A","Voucher","RCM","Remarks"];const keys=["status","action","gstin","gstin_books","gstin_2b","section_2b","party_name","has_books","has_2a","has_2b","invoice_no_books","invoice_no_2b","invoice_no_2a","invoice_date","taxable_books","taxable_2b","taxable_2a","taxable_diff","total_tax_books","total_tax_2b","total_tax_2a","voucher_type","rcm","remarks"];function addSheet(name,list){const aoa=[headers];for(const r of list)aoa.push(keys.map(k=>{const v=r[k];return typeof v==="boolean"?(v?"Y":"N"):v;}));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),name.slice(0,31));}addSheet("02_All_Results",rows);const secAoa=[["2B Section","Documents","Linked with Books","Only in 2B","Credit/Debit Notes"]],secObj={};for(const r of lastResults){const i=r.portal2b;if(!i)continue;const k=String(i.section||"b2b").toUpperCase();if(!secObj[k])secObj[k]={docs:0,linked:0,only:0,notes:0};secObj[k].docs++;if(r.books)secObj[k].linked++;if(r.status==="ONLY_IN_2B")secObj[k].only++;if(i.voucher_type!=="Invoice")secObj[k].notes++;}for(const[k,v]of Object.entries(secObj))secAoa.push([k,v.docs,v.linked,v.only,v.notes]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(secAoa),"03_2B_Sections");addSheet("03_Can_Claim_Now",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)));addSheet("04_Cannot_Claim_Yet",rows.filter(r=>["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH","DUPLICATE_BOOKS"].includes(r.status)));addSheet("05_Portal_Only",rows.filter(r=>["ONLY_IN_2B","ONLY_IN_2A","DUPLICATE_PORTAL"].includes(r.status)));addSheet("06_Fully_Matched",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL"].includes(r.status)));addSheet("07_Invoice_No_Diff",rows.filter(r=>r.status==="INVOICE_MISMATCH"));addSheet("08_GSTIN_Diff",rows.filter(r=>r.status==="GSTIN_MISMATCH"));addSheet("09_Date_Diff",rows.filter(r=>r.status==="DATE_MISMATCH"));addSheet("10_Value_Tax_Diff",rows.filter(r=>["VALUE_MISMATCH","TAX_MISMATCH"].includes(r.status)));addSheet("11_Only_in_Books",rows.filter(r=>r.status==="ONLY_IN_BOOKS"));addSheet("12_Books_Notes",rows.filter(r=>r.status==="BOOKS_NOTE_NOT_IN_B2B"));addSheet("13_Only_in_GSTR2B",rows.filter(r=>r.status==="ONLY_IN_2B"));if(settings.exportScore!==false){const sup=[["GSTIN","Party","Matched","Pending","2A not 2B","Portal only","Can claim now","Cannot claim yet","Risk"]];for(const[g,s]of Object.entries(lastSummary.supplier_summary)){let risk="Low";if(s.hold_itc>0&&s.hold>=2)risk="High";else if(s.hold_itc>0||s.a_not_b>0)risk="Medium";sup.push([g,s.party_name,s.matched,s.hold,s.a_not_b,s.portal_only,s.claimable_itc,s.hold_itc,risk]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sup),"14_Supplier_Scorecard");}if(settings.exportFollow!==false){const fu=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"]];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r);fu.push([row.gstin,row.party_name,row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,row.invoice_date,row.taxable_books||row.taxable_2b||0,row.total_tax_books||row.total_tax_2b||0,r.status,r.action]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fu),"15_Supplier_Followup");}if(settings.exportMethod!==false)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Methodology"],["Match key = GSTIN + normalized Invoice No"],["Can claim now = in GSTR-2B + books"],["Cannot claim yet = only books / 2A not 2B / mismatch"],["Copyright © Chirag Kachhad 2026 · @digigoindia"]]),"16_Methodology");XLSX.writeFile(wb,exportFileName("AUDIT","xlsx"));}
+function exportFollowup(){if(!maybeConfirmExport("Supplier follow-up"))return;const lines=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"].join(",")];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","BOOKS_NOTE_UNMATCHED","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r),inv=row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,taxable=row.taxable_books||row.taxable_2b||0,tax=row.total_tax_books||row.total_tax_2b||0;const msg=r.status==="ONLY_IN_BOOKS"?`Invoice ${inv} not in GSTR-2B — please file GSTR-1`:`Please verify invoice ${inv}. ${r.remarks||""}`;lines.push([row.gstin,row.party_name,inv,row.invoice_date,taxable,tax,r.status,msg].map(v=>{v=String(v??"");if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';return v;}).join(","));}downloadText(exportFileName("Supplier_Followup","csv"),(settings.exportBom!==false?"\uFEFF":"")+lines.join("\n"),"text/csv");}
+function exportAuditExcel(){if(!maybeConfirmExport("Audit Excel"))return;ensureXLSX();const rows=lastResults.map(toRow),wb=XLSX.utils.book_new();const dash=[["GST NEXUS — Audit Pack"],["Generated",lastSummary.generated_at],["Mode",mode],["Company",$("#company").value],["GSTIN",$("#gstin").value],["Period",$("#period").value],[],["Can claim now",lastSummary.amounts.claimable_itc],["Cannot claim yet",lastSummary.amounts.hold_itc],["In 2A not 2B",lastSummary.amounts.pending_2b_itc],["Only on portal",lastSummary.amounts.investigate_itc],[],["Status","Count"]];for(const[s,c]of Object.entries(lastSummary.counts))dash.push([s,c]);dash.push([],["Copyright © Chirag Kachhad 2026 · @digigoindia"]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dash),"01_Dashboard");const headers=["Status","Action","GSTIN","GSTIN Books","GSTIN 2B","2B Section","Party","Books","2A","2B","Inv Books","Inv 2B","Inv 2A","Date","Taxable Books","Taxable 2B","Taxable 2A","Diff","Tax Books","Tax 2B","Tax 2A","Voucher","RCM","Remarks"];const keys=["status","action","gstin","gstin_books","gstin_2b","section_2b","party_name","has_books","has_2a","has_2b","invoice_no_books","invoice_no_2b","invoice_no_2a","invoice_date","taxable_books","taxable_2b","taxable_2a","taxable_diff","total_tax_books","total_tax_2b","total_tax_2a","voucher_type","rcm","remarks"];function addSheet(name,list){const aoa=[headers];for(const r of list)aoa.push(keys.map(k=>{const v=r[k];return typeof v==="boolean"?(v?"Y":"N"):v;}));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),name.slice(0,31));}addSheet("02_All_Results",rows);const secAoa=[["2B Section","Documents","Linked with Books","Only in 2B","Credit/Debit Notes"]],secObj={};for(const r of lastResults){const i=r.portal2b;if(!i)continue;const k=String(i.section||"b2b").toUpperCase();if(!secObj[k])secObj[k]={docs:0,linked:0,only:0,notes:0};secObj[k].docs++;if(r.books)secObj[k].linked++;if(r.status==="ONLY_IN_2B")secObj[k].only++;if(i.voucher_type!=="Invoice")secObj[k].notes++;}for(const[k,v]of Object.entries(secObj))secAoa.push([k,v.docs,v.linked,v.only,v.notes]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(secAoa),"03_2B_Sections");addSheet("03_Can_Claim_Now",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)));addSheet("04_Cannot_Claim_Yet",rows.filter(r=>["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","BOOKS_NOTE_UNMATCHED","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH","DUPLICATE_BOOKS"].includes(r.status)));addSheet("05_Portal_Only",rows.filter(r=>["ONLY_IN_2B","ONLY_IN_2A","DUPLICATE_PORTAL"].includes(r.status)));addSheet("06_Fully_Matched",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL"].includes(r.status)));addSheet("07_Invoice_No_Diff",rows.filter(r=>r.status==="INVOICE_MISMATCH"));addSheet("08_GSTIN_Diff",rows.filter(r=>r.status==="GSTIN_MISMATCH"));addSheet("09_Date_Diff",rows.filter(r=>r.status==="DATE_MISMATCH"));addSheet("10_Value_Tax_Diff",rows.filter(r=>["VALUE_MISMATCH","TAX_MISMATCH"].includes(r.status)));addSheet("11_Only_in_Books",rows.filter(r=>r.status==="ONLY_IN_BOOKS"));addSheet("12_Books_Notes",rows.filter(r=>["BOOKS_NOTE_NOT_IN_B2B","BOOKS_NOTE_UNMATCHED"].includes(r.status)));addSheet("13_Only_in_GSTR2B",rows.filter(r=>r.status==="ONLY_IN_2B"));if(settings.exportScore!==false){const sup=[["GSTIN","Party","Matched","Pending","2A not 2B","Portal only","Can claim now","Cannot claim yet","Risk"]];for(const[g,s]of Object.entries(lastSummary.supplier_summary)){let risk="Low";if(s.hold_itc>0&&s.hold>=2)risk="High";else if(s.hold_itc>0||s.a_not_b>0)risk="Medium";sup.push([g,s.party_name,s.matched,s.hold,s.a_not_b,s.portal_only,s.claimable_itc,s.hold_itc,risk]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sup),"14_Supplier_Scorecard");}if(settings.exportFollow!==false){const fu=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"]];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","BOOKS_NOTE_UNMATCHED","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r);fu.push([row.gstin,row.party_name,row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,row.invoice_date,row.taxable_books||row.taxable_2b||0,row.total_tax_books||row.total_tax_2b||0,r.status,r.action]);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fu),"15_Supplier_Followup");}if(settings.exportMethod!==false)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Methodology"],["Match key = GSTIN + normalized Invoice No"],["Can claim now = in GSTR-2B + books"],["Cannot claim yet = only books / 2A not 2B / mismatch"],["Copyright © Chirag Kachhad 2026 · @digigoindia"]]),"16_Methodology");XLSX.writeFile(wb,exportFileName("AUDIT","xlsx"));}
 const SAMPLE_BOOKS=`Supplier GSTIN,Party Name,Invoice No,Invoice Date,Taxable Value,IGST,CGST,SGST,Cess,Invoice Value,Place of Supply,Voucher Type,RCM
 24AABCT1332L1ZZ,Acme Traders Pvt Ltd,INV-2026-001,05-04-2026,100000.00,0.00,9000.00,9000.00,0.00,118000.00,24-Gujarat,Purchase,N
 24AABCT1332L1ZZ,Acme Traders Pvt Ltd,INV-2026-002,08-04-2026,50000.00,0.00,4500.00,4500.00,0.00,59000.00,24-Gujarat,Purchase,N
@@ -1758,7 +1793,8 @@ $("#gstrMapToggle").onclick=()=>{const panel=$("#gstrMapPanel"),open=panel.class
 $("#gstrMapSheet").addEventListener("change",e=>{if(!gstrImportState)return;gstrImportState.sheetIndex=Number(e.target.value)||0;renderGstrMapper(true);});
 $("#gstrHeaderRow").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.headerIdxBySheet[si]=Math.max(0,(Number(e.target.value)||1)-1);renderGstrMapper(false);});
 $("#gstrHeaderSpan").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.spanBySheet[si]=e.target.value||"auto";renderGstrMapper(false);});
-$("#btnGstrAutoMap").onclick=()=>{if(gstrImportState)renderGstrMapper(true);};$("#btnApplyGstrMap").onclick=applyGstrMapping;
+$("#gstrSectionType").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.sheets[si].section=e.target.value;renderGstrSheetAnalysis();});
+$("#btnGstrAutoMap").onclick=()=>{if(gstrImportState)renderGstrMapper(true);};$("#btnAnalyzeAllGstr").onclick=analyzeAllGstrSheets;$("#btnImportAllGstr").onclick=importAllGstrSheets;$("#btnApplyGstrMap").onclick=applyGstrMapping;
 $("#btnRun").onclick=runRecon;$("#btnSample").onclick=loadSample;$("#btnExportCsv").onclick=exportCsv;$("#btnExportJson").onclick=exportJson;$("#btnExportExcel").onclick=exportAuditExcel;$("#btnExportFollow").onclick=exportFollowup;
 $("#search").addEventListener("input",()=>{if(lastResults.length)render();});$("#filterSoft").addEventListener("change",()=>{if(lastResults.length)render();});
 $("#btnSettings").onclick=openSettings;$("#spClose").onclick=closeSettings;$("#spOverlay").onclick=closeSettings;
@@ -1774,5 +1810,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c7cd3379b54081',t:'MTc4NDI3NjE1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c846c15fc5e83d',t:'MTc4NDI4MTEzNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
