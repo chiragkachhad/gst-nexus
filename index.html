@@ -220,6 +220,19 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
 
 /* Universal books importer / manual column mapping */
+
+.section-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.btn-clear-upload{padding:7px 11px;font-size:.74rem;color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,var(--border))}
+.btn-clear-upload:hover{border-color:var(--red)!important;background:var(--rbg)!important;color:var(--red)!important}
+.books-map:not(.open)>:not(.map-toggle){display:none!important}
+.map-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0;background:transparent!important;color:var(--text);text-align:left;border:0;border-radius:0;box-shadow:none}
+.map-toggle:hover{color:var(--blue);transform:none!important;filter:none!important}
+.map-toggle-title{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800}
+.map-toggle-side{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.72rem;font-weight:600}
+.map-chevron{display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--border2);border-radius:8px;font-size:1.05rem;transition:transform .18s}
+.books-map.open .map-chevron{transform:rotate(180deg)}
+@media(max-width:620px){.map-toggle-side small{display:none}.section-actions{justify-content:flex-start}}
+
 .books-map{display:none;margin-top:14px}
 .books-map.show{display:block}
 .map-top{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -670,7 +683,7 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
   </div>
 
   <!-- Uploads -->
-  <div class="section-title"><h3>① Upload data sources</h3><span>Excel / CSV / JSON · drag &amp; drop</span></div>
+  <div class="section-title"><h3>① Upload data sources</h3><div class="section-actions"><span>Excel / CSV / JSON · drag &amp; drop</span><button type="button" class="btn-g btn-clear-upload" id="btnClearUploads">✕ Clear Uploaded Data</button></div></div>
   <div class="grid3" id="uploadGrid">
     <div class="card" id="cardBooks">
       <h4><span class="dot books"></span> Books / Purchase Register</h4>
@@ -724,7 +737,10 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
   </div>
 
   <div class="card books-map" id="booksMapPanel">
-    <h4><span class="dot books"></span> Universal Purchase Report Importer</h4>
+    <button type="button" class="map-toggle" id="booksMapToggle" aria-expanded="false">
+      <span class="map-toggle-title"><span class="dot books"></span> Universal Purchase Report Importer</span>
+      <span class="map-toggle-side"><small id="booksMapSummary">Click to open column mapping</small><span class="map-chevron">⌄</span></span>
+    </button>
     <div class="map-top">
       <div class="field"><label>Purchase report sheet / table</label><select id="booksMapSheet"></select></div>
       <div class="field small"><label>Header row number</label><input type="number" id="booksHeaderRow" value="1" min="1" step="1" /></div>
@@ -884,13 +900,13 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 </div>
 
 <footer>
-  GST Nexus v2.5 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
+  GST Nexus v2.6 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
   Copyright © Chirag Kachhad 2026 · @digigoindia
 </footer>
 
 <script>
-/* GST Nexus v2.5 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
-/* GST NEXUS v2.5 engine p1 — utils + parse */
+/* GST Nexus v2.6 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
+/* GST NEXUS v2.6 engine p1 — utils + parse */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const fmt = n => {
@@ -1117,6 +1133,7 @@ function renderBooksMapper(redetect=true){
   }).join("");
   const mappedCount=BOOK_MAP_FIELDS.filter(([f])=>grid.querySelector(`[data-book-field="${f}"]`)?.value!=="-1").length;
   $("#booksMapStatus").textContent=`${sh.name} · header row ${hi+1} · ${mappedCount}/${BOOK_MAP_FIELDS.length} fields mapped`;
+  if($("#booksMapSummary"))$("#booksMapSummary").textContent=`${sh.name} · row ${hi+1} · ${mappedCount}/${BOOK_MAP_FIELDS.length} mapped`;
 }
 function applyBooksMapping(showMessage=true){
   if(!booksImportState?.sheets?.length)return;
@@ -1129,13 +1146,15 @@ function applyBooksMapping(showMessage=true){
   booksData=aggregateBookInvoices(invoices);booksImportState.sheetIndex=si;booksImportState.headerIdx=hi;
   $("#booksInfo").style.display="block";$("#booksInfo").textContent=`✓ ${booksName}\n${booksData.length} invoices · sheet: ${sh.name} · manual/universal mapping`;
   $("#booksMapStatus").textContent=`Imported ${booksData.length} invoice records from ${sh.name}`;
-  if(!booksData.length)showAlert("Mapped columns me valid purchase invoices nahi mile. Header row aur mapping check karein.","err");else if(showMessage)showAlert(`Books imported: ${booksData.length} invoices`,"ok");
+  if(!booksData.length)showAlert("Mapped columns me valid purchase invoices nahi mile. Header row aur mapping check karein.","err");
+  else{if(showMessage)showAlert(`Books imported: ${booksData.length} invoices`,"ok");$("#booksMapPanel").classList.remove("open");$("#booksMapToggle").setAttribute("aria-expanded","false");if($("#booksMapSummary"))$("#booksMapSummary").textContent=`Imported ${booksData.length} invoices · click to edit mapping`;}
   updateReady();tryAutoRun();
 }
 function prepareBooksImporter(sheets){
   const preset=$("#softPreset")?.value||"auto",best=booksAutoCandidate(sheets,preset);
   booksImportState={sheets, sheetIndex:best.sheetIndex, headerIdx:best.headerIdx};
   booksData=aggregateBookInvoices(best.invoices);
+  $("#booksMapPanel").classList.remove("open");$("#booksMapToggle").setAttribute("aria-expanded","false");
   renderBooksMapper(false);
   const sh=sheets[best.sheetIndex];$("#booksInfo").style.display="block";$("#booksInfo").textContent=`✓ ${booksName}\n${booksData.length} invoices · sheet: ${sh?.name||"Data"} · universal auto-detect`;
   if(!booksData.length)showAlert("Auto-detect se invoices nahi mile. Universal Column Mapping me header row/columns select karein.","err");else clearAlert();
@@ -1241,7 +1260,7 @@ function profileInfoText(){
   if(!gstr2bProfile.companyName&&!gstr2bProfile.gstin)parts.push("Recipient company/GSTIN metadata file me available nahi hai — manual entry required");return parts.join("\n");
 }
 
-/* GST NEXUS v2.5 engine p2 — recon + summary + UI + init */
+/* GST NEXUS v2.6 engine p2 — recon + summary + UI + init */
 const ACTION={
   MATCHED_ALL:"In books + 2A + 2B — can claim now (other GST rules still apply)",
   MATCHED_2B:"In books + GSTR-2B — can claim now in GSTR-3B",
@@ -1429,6 +1448,20 @@ function setProgress(p){const bar=$("#progress"),i=$("#progressBar");if(p<=0){ba
 function tryAutoRun(){if(settings.autoRun&&!$("#btnRun").disabled)runRecon();}
 function updateModeUI(){$$(".mode").forEach(m=>m.classList.toggle("active",m.dataset.mode===mode));$("#cardBooks").style.opacity=mode==="2a2b"?.45:1;$("#card2b").style.opacity=mode==="2a"?.45:1;$("#card2a").style.opacity=mode==="2b"?.55:1;updateReady();}
 function updateReady(){const needBooks=mode!=="2a2b",need2b=mode==="2b"||mode==="both"||mode==="2a2b",need2a=mode==="2a"||mode==="both"||mode==="2a2b";const ok=(!needBooks||booksData.length)&&(!need2b||data2b.length)&&(!need2a||data2a.length)&&([booksData.length,data2b.length,data2a.length].filter(x=>x>0).length>=2||(mode==="2b"&&booksData.length&&data2b.length)||(mode==="2a"&&booksData.length&&data2a.length));$("#btnRun").disabled=!ok;}
+function clearUploadedData(){
+  const oldProfile={...gstr2bProfile};
+  booksData=[];data2b=[];data2a=[];booksName="";name2b="";name2a="";booksImportState=null;lastResults=[];lastSummary=null;filterStatus="ALL";
+  ["fileBooks","file2b","file2a"].forEach(id=>{const el=$(`#${id}`);if(el)el.value="";});
+  [["booksInfo",""],["portal2bInfo",""],["portal2aInfo",""]].forEach(([id])=>{const el=$(`#${id}`);if(el){el.textContent="";el.style.display="none";}});
+  const panel=$("#booksMapPanel");panel.classList.remove("show","open");$("#booksMapToggle").setAttribute("aria-expanded","false");
+  $("#booksMapSheet").innerHTML="";$("#booksMapGrid").innerHTML="";$("#booksMapStatus").textContent="Waiting for file";$("#booksMapSummary").textContent="Click to open column mapping";
+  if(oldProfile.companyName&&$("#company").value===oldProfile.companyName)$("#company").value="";
+  if(oldProfile.gstin&&$("#gstin").value===oldProfile.gstin)$("#gstin").value="";
+  gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};
+  if($("#periodType").value==="auto"){$("#periodDetected").value="";$("#period").value="";updatePeriodUI();}
+  $("#results").classList.add("hidden");["btnExportExcel","btnExportCsv","btnExportJson","btnExportFollow"].forEach(id=>$("#"+id).disabled=true);
+  setProgress(0);clearAlert();updateReady();showAlert("All uploaded files and reconciliation results cleared.","info");
+}
 function setupDrop(dropSel,fileSel,handler){const drop=$(dropSel),input=$(fileSel);drop.addEventListener("click",()=>input.click());drop.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")input.click();});drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});drop.addEventListener("dragleave",()=>drop.classList.remove("over"));drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files[0])handler(e.dataTransfer.files[0]);});input.addEventListener("change",()=>{if(input.files[0])handler(input.files[0]);});}
 function extOf(n){const p=String(n).split(".");return p.length>1?p.pop().toLowerCase():"";}
 async function loadBooksFile(file){
@@ -1524,6 +1557,8 @@ document.documentElement.classList.add("blog-embed");document.body.classList.add
 loadSettings();initPeriodControls();applyTheme(settings.theme);applyDensity(settings.density);applyDisplayPrefs();
 $$(".mode").forEach(m=>m.addEventListener("click",()=>{mode=m.dataset.mode;updateModeUI();}));
 setupDrop("#dropBooks","#fileBooks",loadBooksFile);setupDrop("#drop2b","#file2b",load2bFile);setupDrop("#drop2a","#file2a",load2aFile);
+$("#btnClearUploads").onclick=clearUploadedData;
+$("#booksMapToggle").onclick=()=>{const panel=$("#booksMapPanel"),open=panel.classList.toggle("open");$("#booksMapToggle").setAttribute("aria-expanded",String(open));};
 $("#booksMapSheet").addEventListener("change",e=>{if(!booksImportState)return;booksImportState.sheetIndex=Number(e.target.value)||0;renderBooksMapper(true);});
 $("#booksHeaderRow").addEventListener("change",e=>{if(!booksImportState)return;booksImportState.headerIdx=Math.max(0,(Number(e.target.value)||1)-1);renderBooksMapper(false);});
 $("#btnAutoMap").onclick=()=>{if(booksImportState)renderBooksMapper(true);};
@@ -1545,5 +1580,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c725533f21cb6e',t:'MTc4NDI2OTI3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c751296df4ff71',t:'MTc4NDI3MTA3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
