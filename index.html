@@ -900,13 +900,13 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 </div>
 
 <footer>
-  GST Nexus v2.6 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
+  GST Nexus v2.7 · GSTR-2A / 2B ↔ Books · Offline audit engine · Matching: GSTIN + smart invoice normalization<br>
   Copyright © Chirag Kachhad 2026 · @digigoindia
 </footer>
 
 <script>
-/* GST Nexus v2.6 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
-/* GST NEXUS v2.6 engine p1 — utils + parse */
+/* GST Nexus v2.7 fixed smart reconciliation · Copyright © Chirag Kachhad 2026 · @digigoindia */
+/* GST NEXUS v2.7 engine p1 — utils + parse */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const fmt = n => {
@@ -1106,6 +1106,26 @@ function aggregateBookInvoices(list){
   }
   return [...groups.values(),...unkeyed];
 }
+function detectDataRole(sheets){
+  let portal=0,books=0;
+  for(const sh of sheets||[]){
+    const sn=String(sh.name||"").toLowerCase();
+    if(/^(b2b|b2ba|cdnr|cdnra|impg|impgsez|isd|ecom)$/.test(sn.trim()))portal+=4;
+    if(/purchase|tally|books|register|voucher/.test(sn))books+=2;
+    const matrix=sh.matrix||[],hi=findHeaderRow(matrix,80),joined=(matrix[hi]||[]).map(normHeader).join(" | ");
+    if(joined.includes("gstin of supplier"))portal+=3;
+    if(joined.includes("invoice details"))portal+=3;
+    if(joined.includes("gstr-1")||joined.includes("gstr 1")||joined.includes("itc availability"))portal+=4;
+    if(joined.includes("supply attract reverse charge"))portal+=2;
+    if(joined.includes("party gstin")||joined.includes("party gstin/uin"))books+=5;
+    if(joined.includes("vch type")||joined.includes("voucher type"))books+=3;
+    if(joined.includes("vch no")||joined.includes("voucher no"))books+=2;
+    if(joined.includes("particulars"))books+=2;
+  }
+  if(portal>=9&&portal>=books+3)return"gstr";
+  if(books>=7&&books>=portal+2)return"books";
+  return"unknown";
+}
 function booksAutoCandidate(sheets,preset){
   let best={sheetIndex:0,headerIdx:0,invoices:[],score:-1};
   sheets.forEach((sh,si)=>{
@@ -1260,7 +1280,7 @@ function profileInfoText(){
   if(!gstr2bProfile.companyName&&!gstr2bProfile.gstin)parts.push("Recipient company/GSTIN metadata file me available nahi hai — manual entry required");return parts.join("\n");
 }
 
-/* GST NEXUS v2.6 engine p2 — recon + summary + UI + init */
+/* GST NEXUS v2.7 engine p2 — recon + summary + UI + init */
 const ACTION={
   MATCHED_ALL:"In books + 2A + 2B — can claim now (other GST rules still apply)",
   MATCHED_2B:"In books + GSTR-2B — can claim now in GSTR-3B",
@@ -1464,7 +1484,7 @@ function clearUploadedData(){
 }
 function setupDrop(dropSel,fileSel,handler){const drop=$(dropSel),input=$(fileSel);drop.addEventListener("click",()=>input.click());drop.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")input.click();});drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});drop.addEventListener("dragleave",()=>drop.classList.remove("over"));drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files[0])handler(e.dataTransfer.files[0]);});input.addEventListener("change",()=>{if(input.files[0])handler(input.files[0]);});}
 function extOf(n){const p=String(n).split(".");return p.length>1?p.pop().toLowerCase():"";}
-async function loadBooksFile(file){
+async function loadBooksFile(file,skipRoleCheck=false){
   booksName=file.name;setProgress(15);
   try{
     const ext=extOf(file.name);let sheets=[];
@@ -1475,30 +1495,52 @@ async function loadBooksFile(file){
       sheets=[{name:ext.toUpperCase()+" Data",matrix:parseDelimitedMatrix(await file.text())}];
     }else throw new Error("Unsupported purchase report. CSV, TSV, TXT, XLSX, XLS, XLSM, ODS ya XML use karein.");
     if(!sheets.length)throw new Error("File me readable purchase data sheet nahi mili.");
+    const detectedRole=detectDataRole(sheets);
+    if(!skipRoleCheck&&detectedRole==="gstr"){
+      booksData=[];booksImportState=null;$("#fileBooks").value="";setProgress(0);
+      await load2bFile(file,true);showAlert("GSTR-2B file Books box me select hui thi. Tool ne ise automatically GSTR-2B side par move kar diya.","info");return;
+    }
     prepareBooksImporter(sheets);setProgress(100);tryAutoRun();
   }catch(e){booksData=[];booksImportState=null;showAlert("Books error: "+e.message,"err");setProgress(0);updateReady();}
 }
-async function load2bFile(file){
+async function load2bFile(file,skipRoleCheck=false){
   name2b=file.name;setProgress(20);
   try{
     const ext=extOf(file.name);let profile={companyName:"",gstin:"",periodTokens:[]},detail="";
     if(["xlsx","xls","xlsm"].includes(ext)){
-      const wb=await readWorkbookFromFile(file),loaded=loadPortalFromWorkbook(wb,"2b");data2b=loaded.invoices;
-      const matrices=wb.SheetNames.map(name=>({name,matrix:sheetToMatrix(wb.Sheets[name])}));profile=extractProfileFromMatrices(matrices);
+      const wb=await readWorkbookFromFile(file),matrices=wb.SheetNames.map(name=>({name,matrix:sheetToMatrix(wb.Sheets[name])}));
+      if(!skipRoleCheck&&detectDataRole(matrices)==="books"){
+        data2b=[];$("#file2b").value="";setProgress(0);await loadBooksFile(file,true);showAlert("Purchase/Books file GSTR-2B box me select hui thi. Tool ne ise automatically Books side par move kar diya.","info");return;
+      }
+      const loaded=loadPortalFromWorkbook(wb,"2b");data2b=loaded.invoices;profile=extractProfileFromMatrices(matrices);
       detail=`${data2b.length} docs (Excel)${loaded.sheetStats.length?"\n"+loaded.sheetStats.join(" | "):""}`;
     }else if(ext==="json"){
       const obj=JSON.parse(await file.text());data2b=walkPortalJson(obj,"2b");profile=extractProfileFromJson(obj);detail=`${data2b.length} docs (JSON)`;
     }else{
       const text=await file.text();
       try{const obj=JSON.parse(text);data2b=walkPortalJson(obj,"2b");profile=extractProfileFromJson(obj);detail=`${data2b.length} docs (JSON)`;}
-      catch{const matrix=parseDelimitedMatrix(text);data2b=mappedRowsFromMatrix(matrix,findHeaderRow(matrix,60),"auto").map(r=>rowToInvoice(r,"2b","b2b")).filter(Boolean);profile=extractProfileFromMatrices([{name:"CSV",matrix}]);detail=`${data2b.length} docs (CSV)`;}
+      catch{
+        const matrix=parseDelimitedMatrix(text),tables=[{name:"CSV",matrix}];
+        if(!skipRoleCheck&&detectDataRole(tables)==="books"){
+          data2b=[];$("#file2b").value="";setProgress(0);await loadBooksFile(file,true);showAlert("Purchase/Books file GSTR-2B box me select hui thi. Tool ne ise automatically Books side par move kar diya.","info");return;
+        }
+        data2b=mappedRowsFromMatrix(matrix,findHeaderRow(matrix,60),"auto").map(r=>rowToInvoice(r,"2b","b2b")).filter(Boolean);profile=extractProfileFromMatrices(tables);detail=`${data2b.length} docs (CSV)`;
+      }
     }
     applyGstr2bProfile(profile);$("#portal2bInfo").style.display="block";$("#portal2bInfo").textContent=`✓ ${file.name}\n${detail}\n${profileInfoText()}`;
     if(!data2b.length)showAlert("GSTR-2B empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();
   }catch(e){data2b=[];gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};showAlert("2B error: "+e.message,"err");setProgress(0);updateReady();}
 }
 async function load2aFile(file){name2a=file.name;setProgress(20);try{const ext=extOf(file.name);if(["xlsx","xls","xlsm"].includes(ext)){const{invoices,sheetStats}=loadPortalFromWorkbook(await readWorkbookFromFile(file),"2a");data2a=invoices;$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (Excel)${sheetStats.length?"\n"+sheetStats.join(" | "):""}`;}else if(ext==="json"){data2a=walkPortalJson(JSON.parse(await file.text()),"2a");$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs (JSON)`;}else{const text=await file.text();try{data2a=walkPortalJson(JSON.parse(text),"2a");}catch{data2a=parseCSV(text).map(r=>rowToInvoice(r,"2a","b2b")).filter(Boolean);}$("#portal2aInfo").style.display="block";$("#portal2aInfo").textContent=`✓ ${file.name}\n${data2a.length} docs`;}if(!data2a.length)showAlert("GSTR-2A empty","err");else clearAlert();updateReady();setProgress(100);tryAutoRun();}catch(e){showAlert("2A error: "+e.message,"err");setProgress(0);}}
-function runRecon(){setProgress(30);const opts={tolerance:Number($("#tolerance").value)||1,dateTol:Number($("#dateTol").value)||0,enableProbable:$("#optProbable").checked,strength:$("#matchStrength").value,includeCN:$("#optCreditNotes").checked,mode,zeroInelig:$("#optIneligible").checked};lastResults=reconcileAll(booksData,data2b,data2a,opts);setProgress(70);lastSummary=buildSummary(lastResults,opts);filterStatus="ALL";render();setProgress(100);showAlert(`Done · ${lastResults.length} rows · Can claim now ${fmt(lastSummary.amounts.claimable_itc)} · Cannot claim yet ${fmt(lastSummary.amounts.hold_itc)}`,"ok");$("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;}
+function runRecon(){
+  setProgress(30);const opts={tolerance:Number($("#tolerance").value)||1,dateTol:Number($("#dateTol").value)||0,enableProbable:$("#optProbable").checked,strength:$("#matchStrength").value,includeCN:$("#optCreditNotes").checked,mode,zeroInelig:$("#optIneligible").checked};
+  lastResults=reconcileAll(booksData,data2b,data2a,opts);setProgress(70);lastSummary=buildSummary(lastResults,opts);filterStatus="ALL";render();setProgress(100);
+  const linked=lastResults.filter(r=>r.books&&(r.portal2b||r.portal2a)).length,minRows=Math.min(booksData.length||Infinity,(data2b.length||data2a.length)||Infinity),ratio=Number.isFinite(minRows)&&minRows?linked/minRows:0;
+  if(linked===0&&minRows>=10)showAlert(`0 invoices matched out of Books ${booksData.length} and GSTR-2B ${data2b.length}. Files may be reversed or GSTIN/Invoice columns are mapped incorrectly. Upload boxes and Universal Mapping check karein.`,"err");
+  else if(ratio<0.1&&minRows>=20)showAlert(`Warning: sirf ${linked} invoices matched. File role, GSTIN and Invoice No mapping verify karein.`,"err");
+  else showAlert(`Done · ${linked} linked invoices · Can claim now ${fmt(lastSummary.amounts.claimable_itc)} · Cannot claim yet ${fmt(lastSummary.amounts.hold_itc)}`,"ok");
+  $("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;
+}
 function render(){
   $("#results").classList.remove("hidden");const a=lastSummary.amounts,c=lastSummary.counts;
   $("#kClaim").textContent=fmt(a.claimable_itc);$("#kHold").textContent=fmt(a.hold_itc);$("#k2aOnly").textContent=fmt(a.pending_2b_itc);$("#kInv").textContent=fmt(a.investigate_itc);$("#kCount").textContent=String(lastSummary.total);
@@ -1580,5 +1622,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c751296df4ff71',t:'MTc4NDI3MTA3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c783042972471f',t:'MTc4NDI3MzExNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
