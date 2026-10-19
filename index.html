@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>GST Nexus — GSTR-2A / 2B ↔ Books Reconciliation</title>
 <!-- Lightweight web build: SheetJS loads from CDN. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root, [data-theme="nexus"]{
   --bg:#070b14;--panel:#0d1424;--card:#111a2e;--border:#1e2d4a;--border2:#2a3f66;
@@ -1504,9 +1504,11 @@ function reconcileBooks2bSmart(books,data2b,opts){
   const dateAbs=(a,b)=>{const d=dateDiffDays(a,b);return d===null?9999:Math.abs(d);};
   const taxGap=(a,b)=>Math.abs(a.taxable_value-b.taxable_value)+Math.abs(a.total_tax-b.total_tax);
   const noteType=x=>x&&["Credit Note","Debit Note"].includes(String(x.voucher_type||""))?String(x.voucher_type):"";
-  const compatibleDocType=(a,b)=>noteType(a)===noteType(b); // notes only reconcile to same note type; invoices to invoices
+  const isNote=x=>!!noteType(x);
+  // Supplier credit notes are often posted as debit notes in the buyer's books.
+  const compatibleDocType=(a,b)=>isNote(a)===isNote(b); // notes with notes; invoices with invoices
   const noteAmountsMatch=(a,b)=>{
-    const tol=Math.max(0,tolerance), near=(x,y)=>Math.abs(Math.abs(Number(x||0))-Math.abs(Number(y||0)))<=tol;
+    const tol=Math.max(2,tolerance), near=(x,y)=>Math.abs(Math.abs(Number(x||0))-Math.abs(Number(y||0)))<=tol;
     if(!near(a.taxable_value,b.taxable_value))return false;
     const keys=["igst","cgst","sgst","cess"];
     const aSplit=keys.reduce((s,k)=>s+Math.abs(Number(a[k]||0)),0),bSplit=keys.reduce((s,k)=>s+Math.abs(Number(b[k]||0)),0);
@@ -1523,9 +1525,9 @@ function reconcileBooks2bSmart(books,data2b,opts){
   // note number or date. Require same supplier, same note type, and matching
   // absolute taxable + GST amounts. Only auto-link an unambiguous candidate.
   books.forEach((b,i)=>{
-    const nt=noteType(b);if(usedB.has(i)||!nt)return;
+    if(usedB.has(i)||!isNote(b))return;
     const candidates=[];data2b.forEach((t,j)=>{
-      if(usedT.has(j)||b.gstin!==t.gstin||noteType(t)!==nt)return;
+      if(usedT.has(j)||b.gstin!==t.gstin||!isNote(t))return;
       if(noteAmountsMatch(b,t))candidates.push(j);
     });
     if(candidates.length===1){const j=candidates[0];usedB.add(i);usedT.add(j);pairs.push({i,j,stage:"NOTE_AMOUNT"});}
@@ -1564,8 +1566,8 @@ function reconcileBooks2bSmart(books,data2b,opts){
       status="GSTIN_MISMATCH";extra=`GSTIN: Books ${b.gstin||"—"} vs GSTR-2B ${t.gstin||"—"}`;
     }else if(p.stage==="INVOICE"){
       status="INVOICE_MISMATCH";extra=`Invoice: Books '${b.invoice_no||"—"}' vs GSTR-2B '${t.invoice_no||"—"}'`;
-    }else if(noteType(b)&&noteType(b)===noteType(t)&&noteAmountsMatch(b,t)){
-      status="MATCHED_2B";diffs={};noteAmountMatched=true;extra=`${noteType(b)} amount match — same GSTIN, note type, taxable value and GST; note number/date difference ignored`;
+    }else if(isNote(b)&&isNote(t)&&noteAmountsMatch(b,t)){
+      status="MATCHED_2B";diffs={};noteAmountMatched=true;extra=`Note amount match — same GSTIN and taxable/GST amounts (round-off allowance ₹${Math.max(2,tolerance)}); Books ${noteType(b)} / portal ${noteType(t)}; note number/date ignored`;
     }else if(Object.keys(diffs).length&&!tdsTaxOnly(diffs)){
       status=Object.keys(diffs).every(k=>["igst","cgst","sgst","cess"].includes(k))?"TAX_MISMATCH":"VALUE_MISMATCH";
     }else if(dd!==null&&Math.abs(dd)>dateTol&&b.invoice_date&&t.invoice_date&&b.invoice_date!==t.invoice_date){
@@ -1746,24 +1748,72 @@ function exportFollowup(){if(!maybeConfirmExport("Supplier follow-up"))return;co
 function exportAuditExcel(){
   if(!maybeConfirmExport("Audit Excel"))return;
   ensureXLSX();
-  const rows=lastResults.map(toRow),wb=XLSX.utils.book_new();
+  const wb=XLSX.utils.book_new();
   wb.Workbook={Sheets:[]};
-  function addAoa(name,aoa,hidden){name=name.slice(0,31);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),name);wb.Workbook.Sheets.push({name:name,Hidden:hidden?1:0});}
+  const sourceDefs={
+    "Books":{flag:"has_books",invoice:"invoice_no_books",taxable:"taxable_books",tax:"total_tax_books",date:r=>r.books?.invoice_date||""},
+    "2B":{flag:"has_2b",invoice:"invoice_no_2b",taxable:"taxable_2b",tax:"total_tax_2b",date:r=>r.portal2b?.invoice_date||""},
+    "2A":{flag:"has_2a",invoice:"invoice_no_2a",taxable:"taxable_2a",tax:"total_tax_2a",date:r=>r.portal2a?.invoice_date||""}
+  };
+  const activeSources=mode==="2b"?["Books","2B"]:mode==="2a"?["Books","2A"]:mode==="2a2b"?["2A","2B"]:["Books","2A","2B"];
+  const excelColors={navy:"FF17365D",blue:"FF245A81",white:"FFFFFFFF",ink:"FF1F2937",stripe:"FFF1F5F9",line:"FFD5DEE8",green:"FFE2F0D9",amber:"FFFFF2CC",red:"FFFCE4D6",purple:"FFE4DFEC"};
+  const cellBorder={bottom:{style:"thin",color:{rgb:excelColors.line}}};
+  function styleSheet(ws,name){
+    const ref=ws["!ref"];if(!ref)return;
+    const range=XLSX.utils.decode_range(ref),isDash=name==="01_Dashboard";
+    const widths=Array.from({length:range.e.c+1},(_,c)=>{let max=10;for(let r=range.s.r;r<=range.e.r;r++){const cell=ws[XLSX.utils.encode_cell({r,c})];if(cell&&cell.v!==undefined)max=Math.max(max,String(cell.v).length);}return{wch:Math.min(Math.max(max+2,12),c===range.e.c?56:42)};});
+    ws["!cols"]=widths;
+    if(!isDash)ws["!autofilter"]={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:range.e})};
+    ws["!rows"]=ws["!rows"]||[];ws["!rows"][0]={hpt:isDash?26:32};
+    for(let r=range.s.r;r<=range.e.r;r++)for(let c=range.s.c;c<=range.e.c;c++){
+      const addr=XLSX.utils.encode_cell({r,c}),cell=ws[addr];if(!cell)continue;
+      let fill=r%2?excelColors.stripe:excelColors.white,fontColor=excelColors.ink,bold=false;
+      if(isDash&&r===0){fill=excelColors.navy;fontColor=excelColors.white;bold=true;}
+      else if(isDash&&c===0&&cell.v){fill="FFEAF1F8";bold=true;}
+      else if(!isDash&&r===0){fill=excelColors.navy;fontColor=excelColors.white;bold=true;}
+      else if(!isDash&&c===0){const st=String(cell.v||"");if(st.startsWith("MATCHED")){fill=excelColors.green;bold=true;}else if(/MISMATCH|PROBABLE|NOTE_NOT/.test(st)){fill=excelColors.amber;bold=true;}else if(st.startsWith("ONLY_")||st.startsWith("DUPLICATE")){fill=excelColors.red;bold=true;}}
+      cell.s={font:{name:"Aptos",sz:10,bold,color:{rgb:fontColor}},fill:{patternType:"solid",fgColor:{rgb:fill}},alignment:{vertical:"center",wrapText:r===0||c===1},border:cellBorder};
+    }
+  }
+  function addAoa(name,aoa,hidden){
+    name=name.slice(0,31);const ws=XLSX.utils.aoa_to_sheet(aoa);styleSheet(ws,name);XLSX.utils.book_append_sheet(wb,ws,name);wb.Workbook.Sheets.push({name:name,Hidden:hidden?1:0});
+  }
   const dash=[["GST NEXUS — Audit Pack"],["Generated",lastSummary.generated_at],["Mode",mode],["Company",$("#company").value],["GSTIN",$("#gstin").value],["Period",$("#period").value],[],["Can claim now",lastSummary.amounts.claimable_itc],["Cannot claim yet",lastSummary.amounts.hold_itc],["In 2A not 2B",lastSummary.amounts.pending_2b_itc],["Only on portal",lastSummary.amounts.investigate_itc],[],["Status","Count"]];
   for(const[s,c]of Object.entries(lastSummary.counts))dash.push([s,c]);
   dash.push([],["Copyright © Chirag Kachhad 2026 · @digigoindia"]);
   addAoa("01_Dashboard",dash,false);
-  const headers=["Status","Action","GSTIN","GSTIN Books","GSTIN 2B","2B Section","Party","Books","2A","2B","Inv Books","Inv 2B","Inv 2A","Date","Taxable Books","Taxable 2B","Taxable 2A","Diff","Tax Books","Tax 2B","Tax 2A","Voucher","RCM","Remarks"];
-  const keys=["status","action","gstin","gstin_books","gstin_2b","section_2b","party_name","has_books","has_2a","has_2b","invoice_no_books","invoice_no_2b","invoice_no_2a","invoice_date","taxable_books","taxable_2b","taxable_2a","taxable_diff","total_tax_books","total_tax_2b","total_tax_2a","voucher_type","rcm","remarks"];
-  function detail(name,list,hidden){if(hidden&&!list.length)return;const aoa=[headers];for(const r of list)aoa.push(keys.map(k=>{const v=r[k];return typeof v==="boolean"?(v?"Y":"N"):v;}));addAoa(name,aoa,hidden);}
-  /* ---- Visible (main working) sheets ---- */
+  const headers=["Status","Action","GSTIN","Party"];
+  if(activeSources.includes("2B")||activeSources.includes("2A"))headers.push("Portal Section");
+  headers.push("Voucher Type");
+  activeSources.forEach(src=>headers.push(src));
+  activeSources.forEach(src=>headers.push(`Invoice No ${src}`));
+  activeSources.forEach(src=>headers.push(`Date ${src}`));
+  activeSources.forEach(src=>headers.push(`Taxable ${src}`));
+  headers.push("Taxable Diff");
+  activeSources.forEach(src=>headers.push(`GST ${src}`));
+  headers.push("RCM","Remarks");
+  function detailRow(r){
+    const out=[r.status,r.action,r.gstin,r.party_name];
+    if(activeSources.includes("2B")||activeSources.includes("2A"))out.push((r.section_2b||r.section_2a||"").toUpperCase());
+    out.push(r.voucher_type);
+    activeSources.forEach(src=>out.push(r[sourceDefs[src].flag]?"Y":"N"));
+    activeSources.forEach(src=>out.push(r[sourceDefs[src].invoice]||""));
+    activeSources.forEach(src=>out.push(sourceDefs[src].date(r.__result)));
+    activeSources.forEach(src=>out.push(r[sourceDefs[src].taxable]??""));
+    out.push(r.taxable_diff??"");
+    activeSources.forEach(src=>out.push(r[sourceDefs[src].tax]??""));
+    out.push(r.rcm||"",r.remarks||"");return out;
+  }
+  const rows=lastResults.map(r=>({...toRow(r),__result:r}));
+  function detail(name,list,hidden){if(hidden&&!list.length)return;const aoa=[headers,...list.map(detailRow)];addAoa(name,aoa,hidden);}
+  /* ---- Visible working sheets ---- */
   detail("02_All_Results",rows,false);
   detail("03_Portal_Only",rows.filter(r=>["ONLY_IN_2B","ONLY_IN_2A","DUPLICATE_PORTAL"].includes(r.status)),false);
   detail("04_Only_in_Books",rows.filter(r=>r.status==="ONLY_IN_BOOKS"),false);
   detail("05_Invoice_No_Diff",rows.filter(r=>r.status==="INVOICE_MISMATCH"),false);
   detail("06_GSTIN_Diff",rows.filter(r=>r.status==="GSTIN_MISMATCH"),false);
   detail("07_Value_Tax_Diff",rows.filter(r=>["VALUE_MISMATCH","TAX_MISMATCH"].includes(r.status)),false);
-  /* ---- Hidden sheets (skipped when empty; Excel: right-click tab → Unhide) ---- */
+  /* ---- Hidden sheets (unhide if needed) ---- */
   detail("08_Can_Claim_Now",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL","DATE_MISMATCH"].includes(r.status)),true);
   detail("09_Cannot_Claim_Yet",rows.filter(r=>["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH","DUPLICATE_BOOKS"].includes(r.status)),true);
   detail("10_Fully_Matched",rows.filter(r=>["MATCHED","MATCHED_2B","MATCHED_ALL"].includes(r.status)),true);
@@ -1771,12 +1821,12 @@ function exportAuditExcel(){
   detail("12_Books_Notes",rows.filter(r=>r.status==="BOOKS_NOTE_NOT_IN_B2B"),true);
   detail("13_Only_in_GSTR2B",rows.filter(r=>r.status==="ONLY_IN_2B"),true);
   const secAoa=[["2B Section","Documents","Linked with Books","Only in 2B","Credit/Debit Notes"]],secObj={};
-  for(const r of lastResults){const i=r.portal2b;if(!i)continue;const k=String(i.section||"b2b").toUpperCase();if(!secObj[k])secObj[k]={docs:0,linked:0,only:0,notes:0};secObj[k].docs++;if(r.books)secObj[k].linked++;if(r.status==="ONLY_IN_2B")secObj[k].only++;if(i.voucher_type!=="Invoice")secObj[k].notes++;}
+  for(const r of lastResults){const i=r.portal2b;if(!i)continue;const k=String(i.section||"b2b").toUpperCase();if(!secObj[k])secObj[k]={docs:0,linked:0,only:0,notes:0};const x=secObj[k];x.docs++;if(r.books)x.linked++;if(r.status==="ONLY_IN_2B")x.only++;if(i.voucher_type!=="Invoice")x.notes++;}
   for(const[k,v]of Object.entries(secObj))secAoa.push([k,v.docs,v.linked,v.only,v.notes]);
   if(secAoa.length>1)addAoa("14_2B_Sections",secAoa,true);
   if(settings.exportScore!==false){const sup=[["GSTIN","Party","Matched","Pending","2A not 2B","Portal only","Can claim now","Cannot claim yet","Risk"]];for(const[g,s]of Object.entries(lastSummary.supplier_summary)){let risk="Low";if(s.hold_itc>0&&s.hold>=2)risk="High";else if(s.hold_itc>0||s.a_not_b>0)risk="Medium";sup.push([g,s.party_name,s.matched,s.hold,s.a_not_b,s.portal_only,s.claimable_itc,s.hold_itc,risk]);}if(sup.length>1)addAoa("15_Supplier_Scorecard",sup,true);}
   if(settings.exportFollow!==false){const fu=[["GSTIN","Party","Invoice","Date","Taxable","Tax","Issue","Message"]];for(const r of lastResults){if(!["ONLY_IN_BOOKS","BOOKS_NOTE_NOT_IN_B2B","IN_2A_NOT_2B","VALUE_MISMATCH","TAX_MISMATCH","PROBABLE_MATCH","INVOICE_MISMATCH","GSTIN_MISMATCH"].includes(r.status))continue;const row=toRow(r);fu.push([row.gstin,row.party_name,row.invoice_no_books||row.invoice_no_2b||row.invoice_no_2a,row.invoice_date,row.taxable_books||row.taxable_2b||0,row.total_tax_books||row.total_tax_2b||0,r.status,r.action]);}if(fu.length>1)addAoa("16_Supplier_Followup",fu,true);}
-  if(settings.exportMethod!==false)addAoa("17_Methodology",[["Methodology"],["Match key = GSTIN + normalized Invoice No"],["Can claim now = in GSTR-2B + books"],["Cannot claim yet = only books / 2A not 2B / mismatch"],["TDS applicable option: tax component diff ignored when taxable value matches"],["Copyright © Chirag Kachhad 2026 · @digigoindia"]],true);
+  if(settings.exportMethod!==false)addAoa("17_Methodology",[["Methodology"],["Detail columns follow selected reconciliation mode: "+activeSources.join(" + ")],["Only selected Books / GSTR source columns are included"],["TDS applicable option: tax component diff ignored when taxable value matches"],["Copyright © Chirag Kachhad 2026 · @digigoindia"]],true);
   wb.Workbook.Views=[{activeTab:0}];
   XLSX.writeFile(wb,exportFileName("AUDIT","xlsx"));
 }
@@ -1829,5 +1879,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c7cd3379b54081',t:'MTc4NDI3NjE1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e91183cd8df586',t:'MTc4NzMwOTMzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c7cd3379b54081',t:'MTc4NDI3NjE1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e91183cd8df586',t:'MTc4NzMwOTMzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cde1d838418600',t:'MTc5MjM5Mjk3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
