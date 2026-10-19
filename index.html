@@ -453,72 +453,6 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
 #results .matrix table td { color:#0f172a !important; background:#fff !important; }
 #results .matrix table th { background:#1e3a5f !important; color:#fff !important; }
 
-
-/* How-to-use modal */
-.hm-overlay{position:fixed;inset:0;background:rgba(2,6,23,.55);backdrop-filter:blur(2px);z-index:90;opacity:0;pointer-events:none;transition:.2s}
-.hm-overlay.open{opacity:1;pointer-events:auto}
-.hm-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.97);width:min(720px,94vw);max-height:84vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);z-index:91;opacity:0;pointer-events:none;transition:.2s}
-.hm-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
-.hm-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);z-index:1}
-.hm-head h3{margin:0;font-size:1rem}
-.hm-close{background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);padding:4px 10px;font-size:.9rem}
-.hm-close:hover{color:inherit}
-.hm-body{padding:14px 18px 18px;display:grid;gap:10px}
-.hm-step{display:flex;gap:12px;border:1px solid var(--border);border-radius:12px;padding:11px 13px;background:color-mix(in srgb, var(--bg) 45%, transparent)}
-.hm-num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--bbg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;border:1px solid color-mix(in srgb, var(--blue) 30%, transparent)}
-.hm-step b{font-size:.85rem;display:block;margin-bottom:2px}
-.hm-step p{margin:3px 0 0;font-size:.78rem;line-height:1.55}
-.hm-step p.gu{color:var(--muted)}
-
-/* Announce bar */
-.announce-bar{position:relative;z-index:40;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 40px 8px 14px;background:var(--grad);color:#fff;font-size:.8rem;font-weight:600;letter-spacing:.2px;cursor:pointer;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.15)}
-.announce-bar u{text-underline-offset:3px}
-.announce-bar:hover u{text-decoration-thickness:2px}
-.announce-bar .ab-close{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:.8rem;line-height:1.4}
-.announce-bar .ab-close:hover{background:rgba(255,255,255,.32)}
-.announce-bar.hidden{display:none}
-@media(max-width:640px){.announce-bar{font-size:.72rem;padding:7px 36px 7px 10px}}
-
-/* ===== Animations pack ===== */
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes popIn{0%{opacity:0;transform:scale(.9)}70%{transform:scale(1.03)}100%{opacity:1;transform:scale(1)}}
-@keyframes attnExcel{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--green) 65%, transparent);transform:translateY(0)}50%{box-shadow:0 0 0 10px transparent, 0 6px 18px color-mix(in srgb, var(--green) 35%, transparent);transform:translateY(-2px)}}
-@keyframes attnRun{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--cyan) 60%, transparent)}50%{box-shadow:0 0 0 9px transparent}}
-@keyframes dropPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
-@keyframes barSlide{from{transform:translateY(-100%);opacity:0}to{transform:none;opacity:1}}
-@keyframes valPop{0%{transform:scale(.8);opacity:.3}100%{transform:scale(1);opacity:1}}
-/* page-load stagger */
-.wrap>*{animation:fadeUp .5s ease both}
-.wrap>*:nth-child(1){animation-delay:.05s}.wrap>*:nth-child(2){animation-delay:.12s}.wrap>*:nth-child(3){animation-delay:.18s}.wrap>*:nth-child(4){animation-delay:.24s}.wrap>*:nth-child(5){animation-delay:.3s}.wrap>*:nth-child(6){animation-delay:.36s}.wrap>*:nth-child(7){animation-delay:.42s}
-.announce-bar{animation:barSlide .5s ease both}
-/* upload success */
-.file-ok{animation:popIn .45s ease}
-#uploadGrid .card{transition:transform .2s,box-shadow .2s}
-#uploadGrid .card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.14)}
-.drop.over{animation:dropPulse .9s ease-in-out infinite;border-style:solid}
-/* buttons */
-.btn-p,.btn-s,.btn-g,.icon-btn{transition:transform .16s,box-shadow .16s,filter .16s,opacity .16s}
-.btn-p:hover:not(:disabled),.btn-s:hover:not(:disabled),.btn-g:hover:not(:disabled),.icon-btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
-.btn-p:active:not(:disabled),.btn-s:active:not(:disabled),.btn-g:active:not(:disabled){transform:translateY(0) scale(.97)}
-/* attention states */
-#btnRun.attn-run:not(:disabled){animation:attnRun 1.5s ease-in-out infinite}
-#btnExportExcel.attn-excel:not(:disabled){animation:attnExcel 1.3s ease-in-out infinite;border-color:var(--green);color:var(--green);font-weight:700}
-/* mode cards */
-.mode:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12)}
-.mode.active{animation:popIn .3s ease}
-/* results reveal */
-.kpis .kpi{animation:fadeUp .5s ease both}
-.kpis .kpi:nth-child(1){animation-delay:.05s}.kpis .kpi:nth-child(2){animation-delay:.12s}.kpis .kpi:nth-child(3){animation-delay:.19s}.kpis .kpi:nth-child(4){animation-delay:.26s}.kpis .kpi:nth-child(5){animation-delay:.33s}
-.kpi{transition:transform .18s,box-shadow .18s}
-.kpi:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.12)}
-.kpi .val{animation:valPop .5s ease both;animation-delay:.35s}
-#results>.card,#results>.section-title{animation:fadeUp .5s ease both}
-.data tbody tr:nth-child(-n+25){animation:fadeUp .35s ease both}
-/* pills & chips */
-.pill{transition:transform .14s,box-shadow .14s}
-.pill:hover{transform:translateY(-2px)}
-.chip{transition:transform .14s}
-.chip:hover{transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -535,63 +469,12 @@ body.blog-embed .wrap,body.blog-embed .header-in{max-width:100%!important;width:
       <span class="chip ok">🔒 100% Offline</span>
       <span class="chip info">2A + 2B + Books</span>
       <span class="chip">Sec 16(2)(aa) ready</span>
-      <button type="button" class="icon-btn" id="btnHelp" title="How to use / કેવી રીતે વાપરવું">❓ How to Use</button>
       <button type="button" class="icon-btn" id="btnSettings" title="Settings (S)">
         <span class="gear">⚙</span> Settings
       </button>
     </div>
   </div>
 </header>
-<!-- Announce bar -->
-<div class="announce-bar" id="announceBar" role="button" tabindex="0" title="How to use / કેવી રીતે વાપરવું">
-  <span>📢 નવા છો? પહેલા આ વાંચો — <u>📖 How to Use · કેવી રીતે વાપરવું</u> — Click here</span>
-  <button type="button" class="ab-close" id="abClose" title="Hide">✕</button>
-</div>
-<!-- How to use modal -->
-<div class="hm-overlay" id="hmOverlay"></div>
-<div class="hm-modal" id="hmModal" role="dialog" aria-modal="true" aria-label="How to use">
-  <div class="hm-head">
-    <h3>📖 How to Use · કેવી રીતે વાપરવું</h3>
-    <button type="button" class="hm-close" id="hmClose" title="Close (Esc)">✕</button>
-  </div>
-  <div class="hm-body">
-    <div class="hm-step"><span class="hm-num">1</span><div>
-      <b>Upload Books / Purchase Register</b>
-      <p>Export your monthly purchase register from Tally / Zoho / Busy / Marg / SAP / Excel and drop it in the <b>Books</b> box. Minimum columns: GSTIN, Invoice No, Date, Taxable Value.</p>
-      <p class="gu">Tally / Zoho / Busy / Marg / SAP / Excel માંથી મહિનાનું પરચેઝ રજિસ્ટર એક્સપોર્ટ કરી <b>Books</b> બોક્સમાં નાખો. ઓછામાં ઓછા GSTIN, ઇન્વોઇસ નંબર, તારીખ અને ટેક્સેબલ વેલ્યુ કોલમ જરૂરી છે.</p>
-    </div></div>
-    <div class="hm-step"><span class="hm-num">2</span><div>
-      <b>Upload GSTR-2B</b>
-      <p>gst.gov.in → Returns Dashboard → GSTR-2B → Download <b>Excel</b> or <b>JSON</b> → drop it in the GSTR-2B box.</p>
-      <p class="gu">gst.gov.in → Returns Dashboard → GSTR-2B → <b>Excel</b> અથવા <b>JSON</b> ડાઉનલોડ કરીને GSTR-2B બોક્સમાં નાખો.</p>
-    </div></div>
-    <div class="hm-step"><span class="hm-num">3</span><div>
-      <b>GSTR-2A (Optional)</b>
-      <p>For supplier follow-up or three-way matching, also download GSTR-2A from the portal and upload it.</p>
-      <p class="gu">સપ્લાયર ફોલો-અપ કે ત્રણ-બાજુ મેચિંગ માટે પોર્ટલ પરથી GSTR-2A પણ ડાઉનલોડ કરીને અપલોડ કરો. (ફરજિયાત નથી)</p>
-    </div></div>
-    <div class="hm-step"><span class="hm-num">4</span><div>
-      <b>Set Details &amp; Options</b>
-      <p>Enter Company, GSTIN, Period and tolerance. If TDS is deducted in purchases, tick <b>“TDS applicable”</b> — tax difference will be ignored when taxable value matches.</p>
-      <p class="gu">કંપની, GSTIN, પિરિયડ અને ટોલરન્સ ભરો. જો ખરીદીમાં TDS કપાય છે તો <b>“TDS applicable”</b> પર ટિક કરો — ટેક્સેબલ વેલ્યુ મેચ થશે તો ટેક્સનો તફાવત ગણાશે નહિં.</p>
-    </div></div>
-    <div class="hm-step"><span class="hm-num">5</span><div>
-      <b>Run Reconciliation</b>
-      <p>Select mode (2B ↔ Books recommended) and press <b>⚡ Run Reconciliation</b>. Check the KPI cards and the detail table below.</p>
-      <p class="gu">મોડ પસંદ કરો (2B ↔ Books ભલામણ છે) અને <b>⚡ Run Reconciliation</b> દબાવો. KPI કાર્ડ અને નીચેનું ડિટેઇલ ટેબલ ચકાસો.</p>
-    </div></div>
-    <div class="hm-step"><span class="hm-num">6</span><div>
-      <b>Download Audit Excel</b>
-      <p>Press <b>⬇ Audit Excel</b> — 7 main sheets are visible (Dashboard, All Results, Portal Only, Only in Books, Invoice/GSTIN/Value-Tax Diff). Extra sheets are hidden — right-click a sheet tab → <b>Unhide</b>.</p>
-      <p class="gu"><b>⬇ Audit Excel</b> દબાવો — 7 મુખ્ય શીટ દેખાશે. બાકીની શીટ છુપાયેલી છે — Excelમાં શીટ ટૅબ પર રાઇટ-ક્લિક કરી <b>Unhide</b> કરો.</p>
-    </div></div>
-    <div class="hm-step"><span class="hm-num">ℹ</span><div>
-      <b>Status Meaning · સ્ટેટસનો અર્થ</b>
-      <p><b>MATCHED</b> = can claim now · <b>ONLY_IN_BOOKS</b> = supplier has not filed, cannot claim yet · <b>ONLY_IN_2B</b> = on portal but missing in books · <b>VALUE/TAX_MISMATCH</b> = amounts differ, verify.</p>
-      <p class="gu"><b>MATCHED</b> = અત્યારે ITC ક્લેમ થશે · <b>ONLY_IN_BOOKS</b> = સપ્લાયરે ફાઇલ નથી કર્યું, હમણાં ક્લેમ ન કરો · <b>ONLY_IN_2B</b> = પોર્ટલ પર છે પણ ચોપડામાં નથી · <b>VALUE/TAX_MISMATCH</b> = રકમ અલગ છે, ચકાસો.</p>
-    </div></div>
-  </div>
-</div>
 
 <!-- Settings Panel -->
 <div class="sp-overlay" id="spOverlay" aria-hidden="true"></div>
@@ -1620,11 +1503,32 @@ function reconcileBooks2bSmart(books,data2b,opts){
   data2b.forEach((t,j)=>{const k=t.match_key;if(!byKey.has(k))byKey.set(k,[]);byKey.get(k).push(j);});
   const dateAbs=(a,b)=>{const d=dateDiffDays(a,b);return d===null?9999:Math.abs(d);};
   const taxGap=(a,b)=>Math.abs(a.taxable_value-b.taxable_value)+Math.abs(a.total_tax-b.total_tax);
+  const noteType=x=>x&&["Credit Note","Debit Note"].includes(String(x.voucher_type||""))?String(x.voucher_type):"";
+  const compatibleDocType=(a,b)=>noteType(a)===noteType(b); // notes only reconcile to same note type; invoices to invoices
+  const noteAmountsMatch=(a,b)=>{
+    const tol=Math.max(0,tolerance), near=(x,y)=>Math.abs(Math.abs(Number(x||0))-Math.abs(Number(y||0)))<=tol;
+    if(!near(a.taxable_value,b.taxable_value))return false;
+    const keys=["igst","cgst","sgst","cess"];
+    const aSplit=keys.reduce((s,k)=>s+Math.abs(Number(a[k]||0)),0),bSplit=keys.reduce((s,k)=>s+Math.abs(Number(b[k]||0)),0);
+    if(aSplit>0&&bSplit>0)return keys.every(k=>near(a[k],b[k]));
+    return near(a.total_tax,b.total_tax);
+  };
   // Stage 1: GSTIN + normalized invoice number. Candidate chosen by closest values/date.
   books.forEach((b,i)=>{
-    const cand=(byKey.get(b.match_key)||[]).filter(j=>!usedT.has(j));if(!cand.length)return;
+    const cand=(byKey.get(b.match_key)||[]).filter(j=>!usedT.has(j)&&compatibleDocType(b,data2b[j]));if(!cand.length)return;
     cand.sort((x,y)=>(taxGap(b,data2b[x])+dateAbs(b.invoice_date,data2b[x].invoice_date)/100)-(taxGap(b,data2b[y])+dateAbs(b.invoice_date,data2b[y].invoice_date)/100));
     const j=cand[0];usedB.add(i);usedT.add(j);pairs.push({i,j,stage:"KEY"});
+  });
+  // Stage 1B: Credit/debit notes — allow amount-based matching despite a different
+  // note number or date. Require same supplier, same note type, and matching
+  // absolute taxable + GST amounts. Only auto-link an unambiguous candidate.
+  books.forEach((b,i)=>{
+    const nt=noteType(b);if(usedB.has(i)||!nt)return;
+    const candidates=[];data2b.forEach((t,j)=>{
+      if(usedT.has(j)||b.gstin!==t.gstin||noteType(t)!==nt)return;
+      if(noteAmountsMatch(b,t))candidates.push(j);
+    });
+    if(candidates.length===1){const j=candidates[0];usedB.add(i);usedT.add(j);pairs.push({i,j,stage:"NOTE_AMOUNT"});}
   });
   const fuzzyWindow=strength==="loose"?31:Math.max(7,dateTol);
   if(enableProbable){
@@ -1632,14 +1536,14 @@ function reconcileBooks2bSmart(books,data2b,opts){
     // if the amount/date candidate is unique, allow even a badly typed invoice no.
     books.forEach((b,i)=>{
       if(usedB.has(i))return;const candidates=[];
-      data2b.forEach((t,j)=>{if(usedT.has(j)||b.gstin!==t.gstin)return;const dd=dateAbs(b.invoice_date,t.invoice_date),sim=invSimilarity(b.invoice_no_norm,t.invoice_no_norm);if(withinTol(b,t)&&dd<=fuzzyWindow)candidates.push({j,dd,sim,score:sim*100-dd});});
+      data2b.forEach((t,j)=>{if(usedT.has(j)||b.gstin!==t.gstin||!compatibleDocType(b,t))return;const dd=dateAbs(b.invoice_date,t.invoice_date),sim=invSimilarity(b.invoice_no_norm,t.invoice_no_norm);if(withinTol(b,t)&&dd<=fuzzyWindow)candidates.push({j,dd,sim,score:sim*100-dd});});
       let best=null;if(candidates.length===1)best=candidates[0];else for(const c of candidates)if(c.sim>=.45&&(!best||c.score>best.score))best=c;
       if(best){usedB.add(i);usedT.add(best.j);pairs.push({i,j:best.j,stage:"INVOICE"});}
     });
     // Stage 3: same GSTIN + strongly similar invoice. Allows amount/tax mismatch to be exposed.
     books.forEach((b,i)=>{
       if(usedB.has(i))return;let best=null;
-      data2b.forEach((t,j)=>{if(usedT.has(j)||b.gstin!==t.gstin)return;const dd=dateAbs(b.invoice_date,t.invoice_date),sim=invSimilarity(b.invoice_no_norm,t.invoice_no_norm);if(sim>=.78&&dd<=31){const score=sim*100-dd-Math.min(30,taxGap(b,t)/1000);if(!best||score>best.score)best={j,score};}});
+      data2b.forEach((t,j)=>{if(usedT.has(j)||b.gstin!==t.gstin||!compatibleDocType(b,t))return;const dd=dateAbs(b.invoice_date,t.invoice_date),sim=invSimilarity(b.invoice_no_norm,t.invoice_no_norm);if(sim>=.78&&dd<=31){const score=sim*100-dd-Math.min(30,taxGap(b,t)/1000);if(!best||score>best.score)best={j,score};}});
       if(best){usedB.add(i);usedT.add(best.j);pairs.push({i,j:best.j,stage:"INVOICE"});}
     });
     // Stage 4: invoice/date/values match but GSTIN differs — ledger/master data error.
@@ -1660,6 +1564,8 @@ function reconcileBooks2bSmart(books,data2b,opts){
       status="GSTIN_MISMATCH";extra=`GSTIN: Books ${b.gstin||"—"} vs GSTR-2B ${t.gstin||"—"}`;
     }else if(p.stage==="INVOICE"){
       status="INVOICE_MISMATCH";extra=`Invoice: Books '${b.invoice_no||"—"}' vs GSTR-2B '${t.invoice_no||"—"}'`;
+    }else if(noteType(b)&&noteType(b)===noteType(t)&&noteAmountsMatch(b,t)){
+      status="MATCHED_2B";diffs={};extra=`${noteType(b)} amount match — same GSTIN, note type, taxable value and GST; note number/date difference ignored`;
     }else if(Object.keys(diffs).length&&!tdsTaxOnly(diffs)){
       status=Object.keys(diffs).every(k=>["igst","cgst","sgst","cess"].includes(k))?"TAX_MISMATCH":"VALUE_MISMATCH";
     }else if(dd!==null&&Math.abs(dd)>dateTol&&b.invoice_date&&t.invoice_date&&b.invoice_date!==t.invoice_date){
@@ -1722,7 +1628,7 @@ function clearAlert(){const el=$("#alert");el.className="alert";el.textContent="
 function setProgress(p){const bar=$("#progress"),i=$("#progressBar");if(p<=0){bar.classList.remove("show");i.style.width="0";return;}bar.classList.add("show");i.style.width=Math.min(100,p)+"%";if(p>=100)setTimeout(()=>bar.classList.remove("show"),400);}
 function tryAutoRun(){if(settings.autoRun&&!$("#btnRun").disabled)runRecon();}
 function updateModeUI(){$$(".mode").forEach(m=>m.classList.toggle("active",m.dataset.mode===mode));$("#cardBooks").style.opacity=mode==="2a2b"?.45:1;$("#card2b").style.opacity=mode==="2a"?.45:1;$("#card2a").style.opacity=mode==="2b"?.55:1;updateReady();}
-function updateReady(){const needBooks=mode!=="2a2b",need2b=mode==="2b"||mode==="both"||mode==="2a2b",need2a=mode==="2a"||mode==="both"||mode==="2a2b";const ok=(!needBooks||booksData.length)&&(!need2b||data2b.length)&&(!need2a||data2a.length)&&([booksData.length,data2b.length,data2a.length].filter(x=>x>0).length>=2||(mode==="2b"&&booksData.length&&data2b.length)||(mode==="2a"&&booksData.length&&data2a.length));$("#btnRun").disabled=!ok;$("#btnRun").classList.toggle("attn-run",!!ok&&$("#results").classList.contains("hidden"));}
+function updateReady(){const needBooks=mode!=="2a2b",need2b=mode==="2b"||mode==="both"||mode==="2a2b",need2a=mode==="2a"||mode==="both"||mode==="2a2b";const ok=(!needBooks||booksData.length)&&(!need2b||data2b.length)&&(!need2a||data2a.length)&&([booksData.length,data2b.length,data2a.length].filter(x=>x>0).length>=2||(mode==="2b"&&booksData.length&&data2b.length)||(mode==="2a"&&booksData.length&&data2a.length));$("#btnRun").disabled=!ok;}
 function clearUploadedData(){
   const oldProfile={...gstr2bProfile};
   booksData=[];data2b=[];data2a=[];booksName="";name2b="";name2a="";booksImportState=null;gstrImportState=null;lastResults=[];lastSummary=null;filterStatus="ALL";
@@ -1735,7 +1641,7 @@ function clearUploadedData(){
   if(oldProfile.gstin&&$("#gstin").value===oldProfile.gstin)$("#gstin").value="";
   gstr2bProfile={companyName:"",gstin:"",months:[],detectedLabel:"",detectedType:""};
   if($("#periodType").value==="auto"){$("#periodDetected").value="";$("#period").value="";updatePeriodUI();}
-  $("#results").classList.add("hidden");["btnExportExcel","btnExportCsv","btnExportJson","btnExportFollow"].forEach(id=>$("#"+id).disabled=true);$("#btnExportExcel").classList.remove("attn-excel");$("#btnRun").classList.remove("attn-run");
+  $("#results").classList.add("hidden");["btnExportExcel","btnExportCsv","btnExportJson","btnExportFollow"].forEach(id=>$("#"+id).disabled=true);
   setProgress(0);clearAlert();updateReady();showAlert("All uploaded files and reconciliation results cleared.","info");
 }
 function setupDrop(dropSel,fileSel,handler){const drop=$(dropSel),input=$(fileSel);drop.addEventListener("click",()=>input.click());drop.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")input.click();});drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});drop.addEventListener("dragleave",()=>drop.classList.remove("over"));drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files[0])handler(e.dataTransfer.files[0]);});input.addEventListener("change",()=>{if(input.files[0])handler(input.files[0]);});}
@@ -1796,7 +1702,7 @@ function runRecon(){
   if(linked===0&&minRows>=10)showAlert(`0 invoices matched out of Books ${booksScope.length} and GSTR-2B ${g2bScope.length}${scopeText}. Files may be reversed or GSTIN/Invoice columns are mapped incorrectly.`,"err");
   else if(ratio<0.1&&minRows>=20)showAlert(`Warning: sirf ${linked} invoices matched${scopeText}. File role, GSTIN and Invoice No mapping verify karein.`,"err");
   else showAlert(`Done${scopeText} · ${linked} linked · Only Books invoices ${lastSummary.counts.ONLY_IN_BOOKS||0} · Books notes ${lastSummary.counts.BOOKS_NOTE_NOT_IN_B2B||0} · Only 2B ${lastSummary.counts.ONLY_IN_2B||0}`,"ok");
-  $("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;$("#btnExportExcel").classList.add("attn-excel");$("#btnRun").classList.remove("attn-run");
+  $("#btnExportExcel").disabled=false;$("#btnExportCsv").disabled=false;$("#btnExportJson").disabled=false;$("#btnExportFollow").disabled=false;
 }
 function render(){
   $("#results").classList.remove("hidden");const a=lastSummary.amounts,c=lastSummary.counts;
@@ -1908,7 +1814,7 @@ $("#gstrMapSheet").addEventListener("change",e=>{if(!gstrImportState)return;gstr
 $("#gstrHeaderRow").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.headerIdxBySheet[si]=Math.max(0,(Number(e.target.value)||1)-1);renderGstrMapper(false);});
 $("#gstrHeaderSpan").addEventListener("change",e=>{if(!gstrImportState)return;const si=gstrImportState.sheetIndex||0;gstrImportState.spanBySheet[si]=e.target.value||"auto";renderGstrMapper(false);});
 $("#btnGstrAutoMap").onclick=()=>{if(gstrImportState)renderGstrMapper(true);};$("#btnApplyGstrMap").onclick=applyGstrMapping;
-$("#btnRun").onclick=runRecon;$("#btnSample").onclick=loadSample;$("#btnExportCsv").onclick=exportCsv;$("#btnExportJson").onclick=exportJson;$("#btnExportExcel").onclick=function(){this.classList.remove("attn-excel");exportAuditExcel();};$("#btnExportFollow").onclick=exportFollowup;
+$("#btnRun").onclick=runRecon;$("#btnSample").onclick=loadSample;$("#btnExportCsv").onclick=exportCsv;$("#btnExportJson").onclick=exportJson;$("#btnExportExcel").onclick=exportAuditExcel;$("#btnExportFollow").onclick=exportFollowup;
 $("#search").addEventListener("input",()=>{if(lastResults.length)render();});$("#filterSoft").addEventListener("change",()=>{if(lastResults.length)render();});
 $("#btnSettings").onclick=openSettings;$("#spClose").onclick=closeSettings;$("#spOverlay").onclick=closeSettings;
 $$("#themeGrid .theme-card").forEach(card=>card.addEventListener("click",()=>{applyTheme(card.dataset.theme);settings.theme=card.dataset.theme;saveSettings();}));
@@ -1923,18 +1829,5 @@ applySettingsToMainForm(false);updateModeUI();
 if(typeof XLSX==="undefined")showAlert("Excel library load nahi hui. Internet on karke page refresh karo (CDN), ya GitHub Pages pe host karo.","err");
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c7cd3379b54081',t:'MTc4NDI3NjE1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>
-(function(){
-  var o=document.getElementById("hmOverlay"),m=document.getElementById("hmModal"),b=document.getElementById("btnHelp"),c=document.getElementById("hmClose");
-  if(!o||!m||!b)return;
-  function open(){o.classList.add("open");m.classList.add("open");}
-  function close(){o.classList.remove("open");m.classList.remove("open");}
-  b.addEventListener("click",open);c.addEventListener("click",close);o.addEventListener("click",close);
-  var ab=document.getElementById("announceBar"),abc=document.getElementById("abClose");
-  if(ab){ab.addEventListener("click",open);ab.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});}
-  if(abc){abc.addEventListener("click",function(e){e.stopPropagation();ab.classList.add("hidden");});}
-  document.addEventListener("keydown",function(e){if(e.key==="Escape")close();});
-})();
-</script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e95fa41e2a4936',t:'MTc4NzMxMjUzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1c7cd3379b54081',t:'MTc4NDI3NjE1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e91183cd8df586',t:'MTc4NzMwOTMzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
