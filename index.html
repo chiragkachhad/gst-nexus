@@ -1559,19 +1559,19 @@ function reconcileBooks2bSmart(books,data2b,opts){
   }
   const results=[];
   for(const p of pairs){
-    const b=books[p.i],t=data2b[p.j],diffs=compareAmounts(b,t,tolerance),dd=dateDiffDays(b.invoice_date,t.invoice_date);let status,extra="";
+    const b=books[p.i],t=data2b[p.j],dd=dateDiffDays(b.invoice_date,t.invoice_date);let diffs=compareAmounts(b,t,tolerance),status,extra="",noteAmountMatched=false;
     if(p.stage==="GSTIN"){
       status="GSTIN_MISMATCH";extra=`GSTIN: Books ${b.gstin||"—"} vs GSTR-2B ${t.gstin||"—"}`;
     }else if(p.stage==="INVOICE"){
       status="INVOICE_MISMATCH";extra=`Invoice: Books '${b.invoice_no||"—"}' vs GSTR-2B '${t.invoice_no||"—"}'`;
     }else if(noteType(b)&&noteType(b)===noteType(t)&&noteAmountsMatch(b,t)){
-      status="MATCHED_2B";diffs={};extra=`${noteType(b)} amount match — same GSTIN, note type, taxable value and GST; note number/date difference ignored`;
+      status="MATCHED_2B";diffs={};noteAmountMatched=true;extra=`${noteType(b)} amount match — same GSTIN, note type, taxable value and GST; note number/date difference ignored`;
     }else if(Object.keys(diffs).length&&!tdsTaxOnly(diffs)){
       status=Object.keys(diffs).every(k=>["igst","cgst","sgst","cess"].includes(k))?"TAX_MISMATCH":"VALUE_MISMATCH";
     }else if(dd!==null&&Math.abs(dd)>dateTol&&b.invoice_date&&t.invoice_date&&b.invoice_date!==t.invoice_date){
       status="DATE_MISMATCH";
     }else{status="MATCHED_2B";if(Object.keys(diffs).length)extra="TDS applicable — tax diff ignored (taxable value matched)";}
-    results.push(smart2bResult(status,b,t,tolerance,extra));
+    const row=smart2bResult(status,b,t,tolerance,extra);if(noteAmountMatched){row.differences={};row.remarks=extra;}results.push(row);
   }
   const portalHasNotes=data2b.some(x=>x.voucher_type!=="Invoice"||["cdnr","cdnra","cdnur","cdn"].includes(String(x.section||"").toLowerCase()));
   books.forEach((b,i)=>{if(!usedB.has(i)){const st=b.voucher_type!=="Invoice"&&!portalHasNotes?"BOOKS_NOTE_NOT_IN_B2B":"ONLY_IN_BOOKS";results.push(smart2bResult(st,b,null,tolerance));}});
